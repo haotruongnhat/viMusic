@@ -53,6 +53,10 @@ def make_rnn_cell(rnn_layer_sizes,
       A tf.contrib.rnn.MultiRNNCell based on the given hyperparameters.
   """
   cells = []
+  if isinstance(rnn_layer_sizes,int):
+    cell = base_cell(rnn_layer_sizes)
+    return cell
+
   for i in range(len(rnn_layer_sizes)):
     cell = base_cell(rnn_layer_sizes[i])
     if attn_length and not cells:
@@ -65,7 +69,7 @@ def make_rnn_cell(rnn_layer_sizes,
         cell = contrib_rnn.InputProjectionWrapper(cell, rnn_layer_sizes[i])
     cell = contrib_rnn.DropoutWrapper(cell, output_keep_prob=dropout_keep_prob)
     cells.append(cell)
-
+  
   cell = contrib_rnn.MultiRNNCell(cells)
 
   return cell
@@ -268,7 +272,6 @@ def get_build_graph_fn(mode, config, sequence_example_file_paths=None):
           dropout_keep_prob=dropout_keep_prob,
           attn_length=hparams.attn_length,
           residual_connections=hparams.residual_connections)
-
       initial_state = cell.zero_state(hparams.batch_size, tf.float32)
 
       outputs, final_state = tf.nn.dynamic_rnn(

@@ -41,7 +41,7 @@ from magenta.music import midi_io
 from magenta.music import sequences_lib
 from magenta.pipelines import melody_pipelines
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from tensorflow.contrib import layers as contrib_layers
 
 
@@ -116,7 +116,7 @@ class NoteRNNLoader(object):
     Returns:
       A matrix of batch_size x cell size zeros.
     """
-    return np.zeros((self.batch_size, self.cell.state_size))
+    return np.zeros((self.batch_size, self.hparams.rnn_layer_sizes))
 
   def restore_initialize_prime(self, session):
     """Saves the session, restores variables from checkpoint, primes model.
@@ -195,7 +195,7 @@ class NoteRNNLoader(object):
                                                 name='melody_sequence')
           self.lengths = tf.placeholder(tf.int32, [None], name='lengths')
           self.initial_state = tf.placeholder(tf.float32,
-                                              [None, self.cell.state_size],
+                                              [None, self.hparams.rnn_layer_sizes],
                                               name='initial_state')
 
           if self.training_file_list is not None:
@@ -208,6 +208,7 @@ class NoteRNNLoader(object):
 
           # Closure function is used so that this part of the graph can be
           # re-run in multiple places, such as __call__.
+          @tf.function
           def run_network_on_melody(m_seq,
                                     lens,
                                     initial_state,
@@ -232,10 +233,14 @@ class NoteRNNLoader(object):
                 swap_memory=swap_memory,
                 parallel_iterations=parallel_iterations)
 
-            outputs_flat = tf.reshape(outputs,
+            if self.note_rnn_type == 'basic_rnn':
+              outputs_flat = tf.reshape(outputs,
+                                      [-1, self.hparams.rnn_layer_sizes])
+            else:
+              outputs_flat = tf.reshape(outputs,
                                       [-1, self.hparams.rnn_layer_sizes[-1]])
             if self.note_rnn_type == 'basic_rnn':
-              linear_layer = contrib_layers.linear
+              linear_layer = contrib_layers.linears
             else:
               linear_layer = contrib_layers.legacy_linear
             logits_flat = linear_layer(
@@ -254,7 +259,6 @@ class NoteRNNLoader(object):
           with tf.variable_scope(self.scope, reuse=True):
             zero_state = self.cell.zero_state(
                 batch_size=self.hparams.batch_size, dtype=tf.float32)
-
             (self.train_logits, self.train_state) = run_network_on_melody(
                 self.train_sequence, self.train_lengths, zero_state)
             self.train_softmax = tf.nn.softmax(self.train_logits)
