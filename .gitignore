@@ -14,3 +14,4 @@ magenta/scripts/chromedriver.log
 magenta/scripts/crawl_dataset_from_musescore.ipynb
 magenta/scripts/musescore_definition.ipynb
 magenta/scripts/score.json
+*.svg
