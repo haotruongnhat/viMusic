@@ -24,6 +24,7 @@ from magenta.models.improv_rnn import improv_rnn_model
 from magenta.models.improv_rnn import improv_rnn_sequence_generator
 from magenta.music.protobuf import generator_pb2
 from magenta.music.protobuf import music_pb2
+from magenta.models.shared import sequence_generator_bundle
 import tensorflow as tf
 
 CHORD_SYMBOL = music_pb2.NoteSequence.TextAnnotation.CHORD_SYMBOL
@@ -130,7 +131,7 @@ def get_bundle():
   if FLAGS.bundle_file is None:
     return None
   bundle_file = os.path.expanduser(FLAGS.bundle_file)
-  return magenta.music.read_bundle_file(bundle_file)
+  return sequence_generator_bundle.read_bundle_file(bundle_file)
 
 
 def run_with_flags(generator):
