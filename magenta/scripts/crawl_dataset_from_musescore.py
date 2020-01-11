@@ -2,14 +2,29 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import json
-import os
+import json, os, time
 
 chrome_driver_path = './chromedriver'
 save_directory = 'downloads/scores'
 download_extention = 'MusicXML' #Please refer to the text on download popup in musescore
 username = 'ViMusic2019'
 password = 'viralint@2019'
+
+class STATE:
+    INVALID = -1
+    OK = 0
+    UNABLE_TO_DOWNLOAD = 1
+    INVALID_DIRECTORY = 2
+
+def state_debug_message(self, state):
+    if state == STATE.INVALID:
+        pass
+    elif state == STATE.OK:
+        pass
+    elif state == STATE.UNABLE_TO_DOWNLOAD:
+        pass
+    elif state == STATE.INVALID_DIRECTORY:
+        pass
 
 class musescore_comm:
     def __init__(self):
@@ -56,7 +71,7 @@ class musescore_comm:
         
         print('Loading page: ' + self.main_page)
         self.driver.get(self.main_page)
-        
+
         print('Login account ID: ' + self.username + ' - Password: ' + self.password)
         button = self.driver.find_element_by_class_name("login")
         button.click()
@@ -79,6 +94,9 @@ class musescore_comm:
     
     def reconnect(self):
         self.driver.get('https://musescore.com/sheetmusic')
+
+    def get_current_url(self):
+        return self.driver.current_url
 
     def go_forward(self):
         self.driver.forward()
@@ -154,6 +172,9 @@ class musescore_comm:
     def get_url_by_index(self, index):
         return list(self.scores_dict.values())[index]
     
+    def get_available_url_count(self):
+        return len(self.scores_dict)
+
     def save_scores_dict_to_json(self, path):
         self.save_dict(self.scores_dict, path)
     
@@ -161,26 +182,52 @@ class musescore_comm:
         self.scores_dict = self.load_dict(path)
 
     def save_dict(self, dictionary, path):
-        with open(path, 'w') as fp:
-            json.dump(dictionary, fp)
+        try:
+            with open(path, 'w') as fp:
+                json.dump(dictionary, fp)
+        except:
+            print('Cant save dict to json')
 
     def load_dict(self, path):
         with open(path, 'r') as fp:
             dictionary = json.load(fp)
             return dictionary
 
+    def download_all_avalable_score_svg(self):
+        downloaded_count = 0
+        unable_downloaded_count = 0
+
+        fail_to_download_dict = {}
+
+        for index in range(self.get_available_url_count()):
+            state = self.download_score_svg(self.get_url_by_index(index))
+            if state == 1:
+                downloaded_count = downloaded_count + 1
+                print('Successfully download score') 
+            else:
+                unable_downloaded_count = unable_downloaded_count + 1
+                fail_to_download_dict[self.get_name_by_index(index)] = self.get_url_by_index(index)
+                print('Unable to download score')
+                self.save_dict(fail_to_download_dict, 'downloads/scores/download_fail_scores.json')
+
+            time.sleep(1)
+            print('Counting = Successfull: #' + str(downloaded_count) + ' Failed: #' + str(unable_downloaded_count))
+
+    def _wrap_string(self, string):
+        '''
+            Wrap input string with 'string'
+        '''
+        return "'" + string + "'"
+
     def download_score_svg(self, url):
         download_state = -1
         self.go_to_url(url)
 
         # Getting score information
-        score_name = self.driver.find_element_by_css_selector('h1.rdHmC._2OGD_').text
+        # score_name = self.driver.find_element_by_css_selector('h1.rdHmC._2OGD_').text
         state, att_dict = self.get_score_info()
         if state == 1:
-            att_dict['Name'] = score_name
-            att_dict['Url'] = url
             print('Getting to get score information')
-            print(att_dict)
         else:
             print('Unable to get score information')
             return download_state
@@ -199,36 +246,34 @@ class musescore_comm:
         score_save_dir = os.path.join(self.save_directory, att_dict['Name'].replace(' ','')) 
 
         if original_url != '':
-            for i in range(number_of_pages):
-                print('File will be saved into: ' + score_save_dir)
+            print('File will be saved into: ' + score_save_dir)
+            os.system('mkdir -p ' + self._wrap_string(score_save_dir))
 
-                result = os.system('wget ' + original_url.replace(original_keyword, 'score_' + str(i)) + ' -P ' + score_save_dir)
+            result = 0
+            for i in range(number_of_pages):
+                result = os.system('wget -nc ' + original_url.replace(original_keyword, 'score_' + str(i)) + ' -P ' + self._wrap_string(score_save_dir))
                 if(result == 0):
-                    print('Successfully download link with score #' + str(i))
                     download_state = 1
                 else:
-                    print('Unable to download link with score #' + str(i) + ' .Error code: ' + str(result))
-                    download_state = -1
                     break
 
-            print('Saving dict for the score')
             self.save_dict(att_dict, os.path.join(score_save_dir, 'info.json'))
 
         return download_state
 
     def download_score_link(self, url):
+        state = -1
+
         self.go_to_url(url)
-        if self._click_download_button() == -1:
-            return False
+        state = self._click_download_button()
             
-        #Wait until the popup window showed
-        if self._waiting_for_popup("article._2O4bQ.oQvef._1byly") == -1:
-            return False
+        # Wait until the popup window showed
+        state = self._waiting_for_popup("article._2O4bQ.oQvef._1byly")
 
-        if self._click_score_extension(self.download_extention) == -1:
-            return False
+        # Click to the type of score want to download
+        state = self._click_score_extension(self.download_extention)
 
-        return True
+        return True if state == 1 else False
 
     def get_score_info(self):
         '''
@@ -243,9 +288,12 @@ class musescore_comm:
 
         attributes_dict = {}
         try:
+            score_name = self.driver.find_element_by_css_selector('h1.rdHmC._2OGD_').text
+            score_link = self.get_current_url()
+
             # Getting infomation from info section
             # info_section = self.driver.find_element_by_css_selector('div._3T5Ga._1M3ft._307fG')
-            attributes_elements = self.driver.find_elements_by_css_selector('div._1ASzI._2OGD_')
+            attributes_elements = self.driver.find_elements_by_css_selector('div._1ASzI._2OGD_:not(._26ZRZ)')
             
             attributes_list = []
             for elem in attributes_elements:
@@ -254,6 +302,9 @@ class musescore_comm:
             attribute_names = attributes_list[0::2]
             attribute_values = attributes_list[1::2]
             
+            attributes_dict['Name'] = score_name
+            attributes_dict['URL'] = score_link   
+
             for name, value in zip(attribute_names, attribute_values):
                 attributes_dict[name] = value
 
@@ -306,7 +357,7 @@ class musescore_comm:
         except:
             pass
 
-        print('Unable to click' + text + ' button') if button_state == -1 else print('Clicked ' + text + ' button')
+        print('Unable to click ' + text + ' button') if button_state == -1 else print('Clicked ' + text + ' button')
 
         return button_state
 
@@ -410,8 +461,4 @@ if __name__== "__main__":
     handler = musescore_comm()
     handler.connect()
     handler.load_scores_dict_from_json('score.json')
-    handler.go_to_url(handler.get_url_by_index(0))
-    # handler.download_score_link(handler.get_url_by_index(0))
-    handler.save_screenshot('abc.png')
-    # for index in range(30):
-    #     handler.download_score_link(handler.get_url_by_index(index))
+    handler.download_all_avalable_score_svg()
