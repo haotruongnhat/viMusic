@@ -2,13 +2,15 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import json, os, time
+import json, os, time, random
 
 chrome_driver_path = './chromedriver'
 save_directory = 'downloads/scores'
 download_extention = 'MusicXML' #Please refer to the text on download popup in musescore
 username = 'ViMusic2019'
 password = 'viralint@2019'
+random_wait_range = [1, 30] #second
+
 
 class STATE:
     INVALID = -1
@@ -36,7 +38,8 @@ class musescore_comm:
         self.download_extention = download_extention
         self.save_directory = save_directory
         self.chrome_options = webdriver.ChromeOptions()
-        
+        self.random_wait_range = random_wait_range   
+
         self.chrome_options.add_experimental_option("prefs", {
             "download.default_directory": save_directory,
             "download.prompt_for_download": False,
@@ -84,7 +87,7 @@ class musescore_comm:
 
         print('Go to main score page')
         self.driver.get(self.main_page + '/sheetmusic')
-        
+
     def login(self):
         pass
     
@@ -210,19 +213,29 @@ class musescore_comm:
                 print('Unable to download score')
                 self.save_dict(fail_to_download_dict, 'downloads/scores/download_fail_scores.json')
 
-            time.sleep(1)
             print('Counting = Successfull: #' + str(downloaded_count) + ' Failed: #' + str(unable_downloaded_count))
+            print('')
+            print('===========================================================')
+            print('')
+
+    def _random_delay_prevent_block_from_website(self):
+        random.seed()
+
+        time_to_wait = round(random.randint(self.random_wait_range[0], self.random_wait_range[1]), 2)
+        print('Wait for random time: ' + str(time_to_wait) + 's')
+        time.sleep(time_to_wait)
 
     def _wrap_string(self, string):
         '''
             Wrap input string with 'string'
         '''
-        return "'" + string + "'"
+        return '"' + string + '"'
 
     def download_score_svg(self, url):
         download_state = -1
         self.go_to_url(url)
 
+        self._random_delay_prevent_block_from_website()
         # Getting score information
         # score_name = self.driver.find_element_by_css_selector('h1.rdHmC._2OGD_').text
         state, att_dict = self.get_score_info()
@@ -252,6 +265,8 @@ class musescore_comm:
             result = 0
             for i in range(number_of_pages):
                 result = os.system('wget -nc ' + original_url.replace(original_keyword, 'score_' + str(i)) + ' -P ' + self._wrap_string(score_save_dir))
+                self._random_delay_prevent_block_from_website()
+
                 if(result == 0):
                     download_state = 1
                 else:
@@ -259,6 +274,7 @@ class musescore_comm:
 
             self.save_dict(att_dict, os.path.join(score_save_dir, 'info.json'))
 
+        self._random_delay_prevent_block_from_website()
         return download_state
 
     def download_score_link(self, url):

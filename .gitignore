@@ -15,3 +15,7 @@ magenta/scripts/crawl_dataset_from_musescore.ipynb
 magenta/scripts/musescore_definition.ipynb
 magenta/scripts/score.json
 *.svg
+magenta/scripts/downloads/*
+magenta/scripts/*.png
+magenta/scripts/*.ipynb
+magenta/scripts/*.exe
