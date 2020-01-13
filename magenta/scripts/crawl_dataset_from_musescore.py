@@ -11,7 +11,6 @@ username = 'ViMusic2019'
 password = 'viralint@2019'
 random_wait_range = [1, 30] #second
 
-
 class STATE:
     INVALID = -1
     OK = 0
