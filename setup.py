@@ -60,7 +60,9 @@ REQUIRED_PACKAGES = [
     'wheel',
     'futures;python_version=="2.7"',
     'apache-beam[gcp] >= 2.14.0',
-    'selenium'
+    'selenium',
+    'cairosvg',
+    'PyPDF2'
 ]
 
 # pylint:disable=line-too-long
