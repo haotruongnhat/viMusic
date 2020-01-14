@@ -201,17 +201,40 @@ class musescore_comm:
         unable_downloaded_count = 0
 
         fail_to_download_dict = {}
+        downloaded_dict = {}
+
+        fail_to_download_dict_path = 'downloads/scores/download_fail_scores.json'
+        downloaded_dict_path = 'downloads/scores/downloaded.json'
+
+        if os.path.isfile(fail_to_download_dict_path):
+            fail_to_download_dict = self.load_dict(fail_to_download_dict_path)
+
+        if os.path.isfile(downloaded_dict_path):
+            downloaded_dict = self.load_dict(downloaded_dict_path)
 
         for index in range(self.get_available_url_count()):
+
+            '''Check if already failed or downloaded'''
+            name = self.get_name_by_index(index)
+
+            try:
+                url = fail_to_download_dict[name]
+                url = downloaded_dict[name]
+                continue
+            except:
+                pass
+
             state = self.download_score_svg(self.get_url_by_index(index))
             if state == 1:
                 downloaded_count = downloaded_count + 1
-                print('Successfully download score') 
+                print('Successfully download score')
+                downloaded_dict[self.get_name_by_index(index)] = self.get_url_by_index(index)
+                self.save_dict(downloaded_dict, downloaded_dict_path)
             else:
                 unable_downloaded_count = unable_downloaded_count + 1
-                fail_to_download_dict[self.get_name_by_index(index)] = self.get_url_by_index(index)
                 print('Unable to download score')
-                self.save_dict(fail_to_download_dict, 'downloads/scores/download_fail_scores.json')
+                fail_to_download_dict[self.get_name_by_index(index)] = self.get_url_by_index(index)
+                self.save_dict(fail_to_download_dict, fail_to_download_dict_path)
 
             print('Counting = Successfull: #' + str(downloaded_count) + ' Failed: #' + str(unable_downloaded_count))
             print('')
@@ -254,9 +277,13 @@ class musescore_comm:
             print('Unable to find SVG link')
             return download_state
 
-        original_keyword = 'score_0'
-        number_of_pages = int(att_dict['Pages'])
-        score_save_dir = os.path.join(self.save_directory, att_dict['Name'].replace(' ','')) 
+        try:
+            original_keyword = 'score_0'
+            number_of_pages = int(att_dict['Pages'])
+            score_save_dir = os.path.join(self.save_directory, att_dict['Name'].replace(' ',''))
+        except:
+            print('Failed to record score info')
+            return download_state
 
         if original_url != '':
             print('File will be saved into: ' + score_save_dir)
