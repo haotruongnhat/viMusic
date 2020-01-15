@@ -62,7 +62,9 @@ REQUIRED_PACKAGES = [
     'apache-beam[gcp] >= 2.14.0',
     'selenium',
     'cairosvg',
-    'PyPDF2'
+    'PyPDF2',
+    'natsort',
+    'xlwt'
 ]
 
 # pylint:disable=line-too-long

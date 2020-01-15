@@ -1,7 +1,9 @@
-import cairosvg, os
+import os, json, cairosvg,time
 from PyPDF2 import PdfFileMerger
+from natsort import natsorted
+import pandas as pd
 
-def merge_all_pdf_files(root):
+def merge_all_pdf_files(root, output_folder):
     '''
     From the pdf list, merge all into one pdf file,
     Then export to parent folder
@@ -10,18 +12,61 @@ def merge_all_pdf_files(root):
         list = [song#1_directory/score_0.pdf, song#1_directory/score_1.pdf, ...]
     '''
     scores_list = find_all_file_available(root, ".pdf")
+    os.system('mkdir -p ' + output_folder)
+
+    total_dictionary = {}
+    index = 0
 
     for pdf_paths in scores_list:
         merger = PdfFileMerger()
-
         for pdf in pdf_paths:
             merger.append(pdf)
 
         parent = os.path.dirname(pdf_paths[0])
+        file_name = os.path.basename(parent)
         print('Merge files in directory: ' + parent)
 
-        merger.write(os.path.join(parent, "score.pdf"))
+        '''Find score info json'''
+        info_file_path = os.path.join(parent, 'info.json')
+        dictionary  = None
+
+        with open(info_file_path, 'r') as fp:
+            dictionary = json.load(fp)
+
+        total_dictionary[str(index)] = dictionary
+        destination_path = os.path.join(output_folder, str(index) + ".pdf")
+
+        index = index + 1
+        merger.write(destination_path)
+        print('Output into: ' + destination_path)
+
+        '''Export to nesscessary file'''
+        info_output_path = os.path.join(output_folder, 'info')
+        try:
+            with open(info_output_path + '.json', 'w') as fp:
+                json.dump(total_dictionary, fp)
+            print('Saved dictionary file')
+        except:
+            print('Cant save dict to json')
+
+        save_dict_to_excel(total_dictionary, info_output_path + '.xls')
+
         merger.close()
+
+def save_dict_to_excel(dictionary, output_file):
+    excel_dictionary = {}
+    atts = ['Name', 'URL']
+    for index in range(len(dictionary)):
+        old_dict = dictionary[str(index)]
+        new_dict = {}
+        for att in atts:
+            new_dict[att] = old_dict[att]
+        
+        new_dict['Genre'] = ''
+        excel_dictionary[str(index)] = new_dict
+
+    df = pd.DataFrame(excel_dictionary).T
+    df.to_excel(output_file)
 
 def find_all_file_available(root_directory, extension):
     '''
@@ -49,12 +94,14 @@ def find_all_file_available(root_directory, extension):
                     files_path.append("{0}".format(path))
 
             if files_path !=[]:
-                scores_list.append(files_path)
+                sorted_files_path = natsorted(files_path)
+                scores_list.append(sorted_files_path)
                 
     score_count = sum([len(score) for score in scores_list])
     print('Number of svg file: ' + str(score_count))
 
     return scores_list
+
 def convert_all_avaialble_svg_to_pdf(root):
     '''
     From the svg list, convert all into pdf file
@@ -90,7 +137,7 @@ def convert_all_avaialble_svg_to_pdf(root):
                 break
 
         score_current_count = score_current_count + len(paths)
-        print('Convert svg to pdf. Progress: ' + str(round(score_current_count/score_count, 2))   +'%')
+        print('Convert svg to pdf. Progress: ' + str(round(score_current_count/score_count, 2)*100.0)   +'%')
         score_pdf_paths.append(paths)
 
     return score_pdf_paths
@@ -98,5 +145,6 @@ def convert_all_avaialble_svg_to_pdf(root):
 
 if __name__== "__main__":
     root = "downloads\scores"
+    output_dir = "downloads\output"
     convert_all_avaialble_svg_to_pdf(root)
-    merge_all_pdf_files(root)
+    merge_all_pdf_files(root, output_dir)
