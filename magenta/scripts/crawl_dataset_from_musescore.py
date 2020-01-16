@@ -184,6 +184,10 @@ class musescore_comm:
         self.scores_dict = self.load_dict(path)
 
     def save_dict(self, dictionary, path):
+        if not os.path.isdir(os.path.dirname(path)):
+            os.system('mkdir -p ' + self._wrap_string(os.path.dirname(path)))
+
+
         try:
             with open(path, 'w') as fp:
                 json.dump(dictionary, fp)
@@ -195,15 +199,17 @@ class musescore_comm:
             dictionary = json.load(fp)
             return dictionary
 
-    def download_all_avalable_score_svg(self):
+    def download_all_avalable_score_svg(self, output_path):
         downloaded_count = 0
         unable_downloaded_count = 0
 
         fail_to_download_dict = {}
         downloaded_dict = {}
 
-        fail_to_download_dict_path = 'downloads/scores/download_fail_scores.json'
-        downloaded_dict_path = 'downloads/scores/downloaded.json'
+        self.save_directory = output_path
+
+        fail_to_download_dict_path = os.path.join(output_path, 'download_fail_scores.json')
+        downloaded_dict_path = os.path.join(output_path, 'downloaded.json')
 
         if os.path.isfile(fail_to_download_dict_path):
             fail_to_download_dict = self.load_dict(fail_to_download_dict_path)
@@ -502,5 +508,10 @@ class musescore_comm:
 if __name__== "__main__":
     handler = musescore_comm()
     handler.connect()
-    handler.load_scores_dict_from_json('score.json')
-    handler.download_all_avalable_score_svg()
+
+    save_path = 'downloads\scores\Piano-Percussion'
+    save_path = os.path.join("downloads", "scores", "Piano-Percussion")
+    handler.go_to_url("https://musescore.com/sheetmusic?sort=view_count&instruments=3%2C0&parts=2")
+    handler.query_all_scores_url_in_current_filter(20)
+    handler.save_scores_dict_to_json(os.path.join(save_path, "scores.json"))
+    handler.download_all_avalable_score_svg(save_path)
