@@ -123,8 +123,14 @@ def convert_all_avaialble_svg_to_pdf(root):
     score_current_count = 0
     for score_folder in scores_list:
         paths = []
+
+        parent = "{0}".format(os.path.dirname(score_folder[0]))
+        json_flag_path = os.path.join(parent, "converted.json")
+
+        if os.path.isfile(json_flag_path):
+            continue
+
         for path in score_folder:
-            parent = "{0}".format(os.path.dirname(path))
             filename_only = "{0}".format(os.path.basename(path).split('.')[0]) + ".pdf"
             save_path = os.path.join(parent, filename_only)
             print(save_path)
@@ -138,9 +144,10 @@ def convert_all_avaialble_svg_to_pdf(root):
 
         score_current_count = score_current_count + len(paths)
         print('Convert svg to pdf. Progress: ' + str(round(score_current_count/score_count, 2)*100.0)   +'%')
-        score_pdf_paths.append(paths)
 
-    return score_pdf_paths
+        '''Write a blank json file to mark whether all the file was converted'''
+        with open(json_flag_path, 'w') as fp:
+                json.dump({}, fp)
 
 
 if __name__== "__main__":
