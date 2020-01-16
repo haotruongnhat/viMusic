@@ -508,10 +508,8 @@ class musescore_comm:
 if __name__== "__main__":
     handler = musescore_comm()
     handler.connect()
-
-    save_path = 'downloads\scores\Piano-Percussion'
     save_path = os.path.join("downloads", "scores", "Piano-Percussion")
     handler.go_to_url("https://musescore.com/sheetmusic?sort=view_count&instruments=3%2C0&parts=2")
-    handler.query_all_scores_url_in_current_filter(20)
+    handler.query_all_scores_url_in_current_filter()
     handler.save_scores_dict_to_json(os.path.join(save_path, "scores.json"))
     handler.download_all_avalable_score_svg(save_path)

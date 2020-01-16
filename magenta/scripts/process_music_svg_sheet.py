@@ -194,7 +194,7 @@ def convert_all_avaialble_svg_to_pdf(root):
 
 
 if __name__== "__main__":
-    root = "downloads\scores"
-    output_dir = "downloads\output"
+    root = os.path.join("downloads", "scores")
+    output_dir = os.path.join("downloads", "output")
     convert_all_avaialble_svg_to_pdf(root)
     merge_all_pdf_files(root, output_dir)
