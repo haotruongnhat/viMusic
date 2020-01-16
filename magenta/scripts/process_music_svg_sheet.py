@@ -28,7 +28,10 @@ def merge_all_pdf_files(root, output_folder):
 
         '''Find score info json'''
         info_file_path = os.path.join(parent, 'info.json')
-        dictionary  = None
+        dictionary = None
+
+        if not os.path.isfile(info_file_path):
+            continue
 
         with open(info_file_path, 'r') as fp:
             dictionary = json.load(fp)
@@ -50,10 +53,24 @@ def merge_all_pdf_files(root, output_folder):
             print('Cant save dict to json')
 
         save_dict_to_excel(total_dictionary, info_output_path + '.xls')
+        save_download_dict_to_excel({}, os.path.join(output_folder, "downloaded.xls"), os.path.join(root, "downloaded.json"))
+        save_download_dict_to_excel({}, os.path.join(output_folder, "downloaded_fail.xls"), os.path.join(root, "download_fail_scores.json"))
 
         merger.close()
 
-def save_dict_to_excel(dictionary, output_file):
+def save_dict_to_excel(dictionary, output_file, input_file=None):
+    '''
+        Use to convert info.json in output folder
+    '''
+    if input_file is not None:
+        if os.path.isfile(input_file):
+            with open(input_file, 'r') as fp:
+                dictionary = json.load(fp)
+
+    if dictionary == {}:
+        print('ERROR: Blank dictionary')
+        return
+
     excel_dictionary = {}
     atts = ['Name', 'URL']
     for index in range(len(dictionary)):
@@ -67,6 +84,32 @@ def save_dict_to_excel(dictionary, output_file):
 
     df = pd.DataFrame(excel_dictionary).T
     df.to_excel(output_file)
+
+def save_download_dict_to_excel(dictionary, output_file, input_file=None):
+    '''
+        Use to convert download_fail_scores.json or downloaded.json to excel file
+    '''
+    if input_file is not None:
+        if os.path.isfile(input_file):
+            with open(input_file, 'r') as fp:
+                dictionary = json.load(fp)
+
+    if dictionary == {}:
+        print('ERROR: Blank dictionary')
+        return
+
+    excel_dictionary = {}
+    for index in range(len(dictionary)):
+        new_dict = {}
+        new_dict['Name'] = list(dictionary)[index]
+        new_dict['URL'] = list(dictionary.values())[index]
+        excel_dictionary[str(index)] = new_dict
+
+    df = pd.DataFrame(excel_dictionary).T
+    try:
+        df.to_excel(output_file)
+    except:
+        print('ERROR: File is opening by another program')
 
 def find_all_file_available(root_directory, extension):
     '''
@@ -143,7 +186,7 @@ def convert_all_avaialble_svg_to_pdf(root):
                 break
 
         score_current_count = score_current_count + len(paths)
-        print('Convert svg to pdf. Progress: ' + str(round(score_current_count/score_count, 2)*100.0)   +'%')
+        print('Convert svg to pdf. Progress: ' + str(round(score_current_count*100.0/score_count, 2))   +'%')
 
         '''Write a blank json file to mark whether all the file was converted'''
         with open(json_flag_path, 'w') as fp:
