@@ -17,5 +17,6 @@ magenta/scripts/score.json
 *.svg
 magenta/scripts/downloads/*
 magenta/scripts/*.png
-magenta/scripts/*.ipynb
-magenta/scripts/*.exe
+*.ipynb
+*.exe
+*.tar.gz
