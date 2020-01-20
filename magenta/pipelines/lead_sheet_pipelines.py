@@ -15,6 +15,7 @@
 """Data processing pipelines for lead sheets."""
 import copy
 
+import magenta.music as mm
 from magenta.music import chord_symbols_lib
 from magenta.music import chords_lib
 from magenta.music import events_lib
@@ -28,7 +29,22 @@ from magenta.pipelines import pipeline
 from magenta.pipelines import statistics
 import tensorflow as tf
 
-
+class InferChordFromQuantizedSequence(pipeline.Pipeline):
+  """ Infer chords from quantized NoteSequence"""
+  def __init__(self, name=None):
+    super(InferChordFromQuantizedSequence, self).__init__(
+      input_type=music_pb2.NoteSequence,
+      output_type=music_pb2.NoteSequence,
+      name=name)
+    pass
+  
+  def transform(self, quantized_sequence):
+    try:
+      mm.infer_chords_for_sequence(quantized_sequence)
+      return [quantized_sequence]
+    except:
+      return []
+    
 class LeadSheetExtractor(pipeline.Pipeline):
   """Extracts lead sheet fragments from a quantized NoteSequence."""
 

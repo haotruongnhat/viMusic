@@ -18,8 +18,8 @@ This script will extract melodies and chords from NoteSequence protos and save
 them to TensorFlow's SequenceExample protos for input to the improv RNN models.
 """
 
-import os
-
+import os, sys
+sys.path.append(os.getcwd())
 from magenta.models.improv_rnn import improv_rnn_config_flags
 from magenta.models.improv_rnn import improv_rnn_pipeline
 from magenta.pipelines import pipeline
