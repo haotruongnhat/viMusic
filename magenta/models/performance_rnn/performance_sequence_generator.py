@@ -142,7 +142,6 @@ class PerformanceRnnSequenceGenerator(sequence_generator.BaseSequenceGenerator):
 
     # Ensure that the track extends up to the step we want to start generating.
     performance.set_length(generate_start_step - performance.start_step)
-
     # Extract generation arguments from generator options.
     arg_types = {
         'disable_conditioning': lambda arg: ast.literal_eval(arg.string_value),

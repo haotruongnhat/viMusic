@@ -331,7 +331,6 @@ class EventSequenceRnnModel(mm.BaseModel):
     if len(primer_events) >= num_steps:
       # Sequence is already long enough, no need to generate.
       return primer_events
-
     event_sequences = [copy.deepcopy(primer_events)]
 
     # Construct inputs for first step after primer.

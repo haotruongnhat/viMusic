@@ -260,6 +260,8 @@ class PitchChordViMusicControlSignal(ViMusicControlSignal):
         for i, event in enumerate(vimusic):
             if event.event_type == ViMusicEvent.CHORD_ON:
                 prev_value = event.event_value
+            elif event.event_type == ViMusicEvent.CHORD_OFF:
+                prev_value = NO_CHORD
             chord_sequence.append(prev_value)
         return chord_sequence
 

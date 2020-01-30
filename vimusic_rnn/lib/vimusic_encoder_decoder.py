@@ -21,14 +21,14 @@ class ViMusicOneHotEncoding(encoder_decoder.OneHotEncoding):
         self._event_ranges = [
         (ViMusicEvent.NOTE_ON, min_pitch, max_pitch),
         (ViMusicEvent.NOTE_OFF, min_pitch, max_pitch),
-        (ViMusicEvent.TIME_SHIFT, 0, max_shift_steps),
+        (ViMusicEvent.TIME_SHIFT, 1, max_shift_steps),
+        (ViMusicEvent.CHORD_ON,0,2**13 - 1),
+        (ViMusicEvent.CHORD_OFF,0,2**13 - 1),
         ]
         if num_velocity_bins > 0:
             self._event_ranges.append(
             (ViMusicEvent.VELOCITY, 1, num_velocity_bins))
         self._max_shift_steps = max_shift_steps
-        self._event_ranges.append(
-            (ViMusicEvent.CHORD_ON,0,2**13 - 1))
 
     @property
     def num_classes(self):
@@ -45,13 +45,13 @@ class ViMusicOneHotEncoding(encoder_decoder.OneHotEncoding):
         offset = 0
         for event_type, min_value, max_value in self._event_ranges:
             if event.event_type == event_type:
-                if event.event_type == ViMusicEvent.CHORD_ON:
+                if event.event_type in (ViMusicEvent.CHORD_ON,ViMusicEvent.CHORD_OFF):
                     if event.event_value == NO_CHORD:
                         return offset
-                    pitches = chord_symbols_lib.chord_symbol_pitches(event.event_value)
+                    keys = chord_symbols_lib.chord_symbol_pitches(event.event_value)
                     binary_code = ['0'] * 12 #12 available notes
-                    for pitch in pitches:
-                        binary_code[pitch] = '1'
+                    for key in keys:
+                        binary_code[key] = '1'
                     code = int(''.join(binary_code),2)
                     return offset + code - min_value + 1
                 return offset + event.event_value - min_value
@@ -62,7 +62,7 @@ class ViMusicOneHotEncoding(encoder_decoder.OneHotEncoding):
         offset = 0
         for event_type, min_value, max_value in self._event_ranges:
             if offset <= index <= offset + max_value - min_value:
-                if event_type == ViMusicEvent.CHORD_ON:
+                if event_type in (ViMusicEvent.CHORD_ON,ViMusicEvent.CHORD_OFF):
                     #decode value
                     code = index - offset + min_value - 1
                     if code == 0:

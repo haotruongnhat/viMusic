@@ -77,13 +77,13 @@ encoder_decoder = magenta.music.OneHotEventSequenceEncoderDecoder(
 #hparams
 hparams = contrib_training.HParams(
     batch_size=32,
-    rnn_layer_sizes=[256, 256, 256],
-    dropout_keep_prob=0.8,
+    rnn_layer_sizes=[512, 512, 512],
+    dropout_keep_prob=0.6,
     clip_norm=3,
     learning_rate=0.005)
 
 min_events = 0
-max_events = 512
+max_events = 256
 
 #num_velocity_bins
 num_velocity_bins = 32

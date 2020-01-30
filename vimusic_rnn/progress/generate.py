@@ -142,10 +142,10 @@ class ViMusicRnnSequenceGenerator(sequence_generator.BaseSequenceGenerator):
 
         # Extract generation arguments from generator options.
         arg_types = {
-        'temperature': lambda arg: arg.float_value,
-        'beam_size': lambda arg: arg.int_value,
-        'branch_factor': lambda arg: arg.int_value,
-        'steps_per_iteration': lambda arg: arg.int_value
+            'temperature': lambda arg: arg.float_value,
+            'beam_size': lambda arg: arg.int_value,
+            'branch_factor': lambda arg: arg.int_value,
+            'steps_per_iteration': lambda arg: arg.int_value
         }
 
         #??

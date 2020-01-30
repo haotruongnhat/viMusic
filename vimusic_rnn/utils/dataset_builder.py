@@ -11,6 +11,7 @@ from magenta.pipelines import statistics
 
 from magenta.music import note_sequence_io
 from magenta.music import musicxml_reader
+from magenta.music import midi_io
 
 from vimusic_rnn.pipeline import get_pipeline
 
@@ -58,6 +59,33 @@ def convert_musicxml(root_dir, sub_dir, full_file_path):
     tf.logging.info('Converted MusicXML file %s.', full_file_path)
     return sequence
 
+def convert_midi(root_dir, sub_dir, full_file_path):
+    """Converts a midi file to a sequence proto.
+
+    Args:
+        root_dir: A string specifying the root directory for the files being
+            converted.
+        sub_dir: The directory being converted currently.
+        full_file_path: the full path to the file to convert.
+
+    Returns:
+        Either a NoteSequence proto or None if the file could not be converted.
+    """
+    try:
+        sequence = midi_io.midi_to_sequence_proto(
+        tf.gfile.GFile(full_file_path, 'rb').read())
+    except midi_io.MIDIConversionError as e:
+        tf.logging.warning(
+        'Could not parse MIDI file %s. It will be skipped. Error was: %s',
+        full_file_path, e)
+        return None
+    sequence.collection_name = os.path.basename(root_dir)
+    sequence.filename = os.path.join(sub_dir, os.path.basename(full_file_path))
+    sequence.id = note_sequence_io.generate_note_sequence_id(
+        sequence.filename, sequence.collection_name, 'midi')
+    tf.logging.info('Converted MIDI file %s.', full_file_path)
+    return sequence
+
 def convert_files(root_dir, sub_dir, writer, recursive=False):
     """Converts files.
 
@@ -81,8 +109,18 @@ def convert_files(root_dir, sub_dir, writer, recursive=False):
         tf.logging.log_every_n(tf.logging.INFO, '%d files converted.',
                            1000, written_count)
         full_file_path = os.path.join(dir_to_convert, file_in_dir)
-        if full_file_path.lower().endswith('mxl'):
-            sequence = None
+        sequence = None
+        if full_file_path.lower().endswith('.mid') or \
+            full_file_path.lower().endswith('.midi'):
+            try:
+                sequence = convert_midi(root_dir, sub_dir, full_file_path)
+            except Exception as exc:
+                tf.logging.fatal('%r generated an exception: %s', full_file_path, exc)
+                continue
+            if sequence:
+                writer.write(sequence)
+        elif full_file_path.lower().endswith('mxl') or \
+            full_file_path.lower().endswith('xml'):
             try:
                 sequence = convert_musicxml(root_dir, sub_dir, full_file_path)
             except Exception as exc:  # pylint: disable=broad-except

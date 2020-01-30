@@ -493,12 +493,10 @@ class DAGPipeline(pipeline.Pipeline):
         stats = unit.get_stats()
         cumulative_stats.extend(stats)
         yield results_
-
     stats = []
     results = {self.input: [input_object]}
     for unit in self.call_list[1:]:
       # Compute transformation.
-
       if isinstance(unit, DagOutput):
         unit_outputs = self._get_outputs_as_signature(self.dag[unit], results)
       else:
@@ -512,7 +510,6 @@ class DAGPipeline(pipeline.Pipeline):
             stats_accumulator(unit, unit_inputs, stats))
         unit_outputs = self._join_lists_or_dicts(unjoined_outputs, unit)
       results[unit] = unit_outputs
-
     self._set_stats(stats)
     return dict((output.name, results[output]) for output in self.outputs)
 

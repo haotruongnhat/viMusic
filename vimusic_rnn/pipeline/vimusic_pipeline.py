@@ -153,11 +153,10 @@ class InferChordsPipeline(NoteSequencePipeline):
     def transform(self, whole_sequence):
 
         #if there exists chords -> learn using default chord
-        if not any([x.text == CHORD_SYMBOL for x in whole_sequence.text_annotations]):
+        if any([x.text == CHORD_SYMBOL for x in whole_sequence.text_annotations]):
             return [copy.deepcopy(whole_sequence)]
 
         sequence = copy.deepcopy(whole_sequence)
-
         #get list of notes
         notes = [ note for note in sequence.notes if not note.is_drum and
         (self.instrument is None or note.instrument == self.instrument)]
@@ -180,33 +179,43 @@ class InferChordsPipeline(NoteSequencePipeline):
         ]
         events = sorted(onsets + offsets)
 
+        previous_time = 0
         current_time = 0
         current_figure = constants.NO_CHORD
         active_notes = set()
+        last_start_single_note_time = 0
+        single_notes = []
 
         for time, idx, is_offset in events:
             if time > current_time:
                 active_pitches = set(sorted_notes[idx].pitch for idx in active_notes)
-                #removing notes that ae in soprano, since it is not in a chord
-                #from pdb import set_trace ; set_trace()
-                active_pitches = list(filter(lambda x : x < SOPRANO[0],active_pitches))
 
-                # Infer a chord symbol for the active pitches.
                 figure = constants.NO_CHORD
                 try:
-                    figure = chord_symbols_lib.pitches_to_chord_symbol(active_pitches)
+                    if len(active_pitches) > 1:
+                        figure = chord_symbols_lib.pitches_to_chord_symbol(active_pitches)
+                    else:
+                        figure = NO_CHORD
                 except:
                     print("Skipping chords....")
                     figure = constants.NO_CHORD
 
+
                 if figure != current_figure:
-                    # Add a text annotation to the sequence.
+                    if len(sequence.text_annotations) >= 1:
+                        if sequence.text_annotations[-1].annotation_type == CHORD_SYMBOL:
+                            if is_quantized_sequence(sequence):
+                                sequence.text_annotations[-1].end_time = (
+                                time / sequence.quantization_info.steps_per_second)
+                                sequence.text_annotations[-1].quantized_end_step = time
+                            else:
+                                sequence.text_annotations[-1].end_time = time
                     text_annotation = sequence.text_annotations.add()
                     text_annotation.text = figure
                     text_annotation.annotation_type = CHORD_SYMBOL
                     if is_quantized_sequence(sequence):
                         text_annotation.time = (
-                            current_time * sequence.quantization_info.steps_per_quarter)
+                            current_time / sequence.quantization_info.steps_per_second)
                         text_annotation.quantized_step = current_time
                     else:
                         text_annotation.time = current_time
@@ -216,7 +225,40 @@ class InferChordsPipeline(NoteSequencePipeline):
             current_time = time
             if is_offset:
                 active_notes.remove(idx)
+                if len(active_notes) == 1:
+                    last_start_single_note_time = time
             else:
+                if len(active_notes) == 1 and time > last_start_single_note_time: #time to cut to add note
+                    single_notes.append((
+                        list(active_notes)[0],
+                        last_start_single_note_time,
+                        time,
+                    ))
                 active_notes.add(idx)
 
+        #last chord
+        if len(sequence.text_annotations) >= 1:
+            if sequence.text_annotations[-1].annotation_type == CHORD_SYMBOL:
+                if is_quantized_sequence(sequence):
+                    sequence.text_annotations[-1].end_time = (
+                    current_time / sequence.quantization_info.steps_per_second)
+                    sequence.text_annotations[-1].quantized_end_step = current_time
+                else:
+                    sequence.text_annotations[-1].end_time = current_time
+
+        #delete all notes in notes
+        for i in range(len(sequence.notes)):
+            del sequence.notes[0]
+        #from pdb import set_trace ; set_trace()
+        for n in single_notes:
+            sequence.notes.append(sorted_notes[n[0]])
+            note = sequence.notes[-1]
+            if is_quantized_sequence(sequence):
+                note.quantized_start_step = n[1]
+                note.quantized_end_step = n[2]
+                note.start_time = n[1] / sequence.quantization_info.steps_per_second
+                note.end_time = n[2] / sequence.quantization_info.steps_per_second
+            else:
+                note.start_time = n[1]
+                note.end_time = n[2]
         return [sequence]

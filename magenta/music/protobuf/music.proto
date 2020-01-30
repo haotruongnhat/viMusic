@@ -334,8 +334,12 @@ message NoteSequence {
   message TextAnnotation {
     // Time in seconds.
     double time = 1;
+    //end time
+    double end_time = 6;
     // Quantized time in steps.
     int64 quantized_step = 4;
+    //End quantized time in steps
+    int64 quantized_end_step = 5;
     // Text of the annotation.
     string text = 2;
     // Type of the annotation, to assist with automated interpretation.

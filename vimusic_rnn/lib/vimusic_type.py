@@ -81,6 +81,8 @@ class ViMusicEvent(object):
 	VELOCITY = 4
 	#Start of new chord
 	CHORD_ON = 5
+	#end of a chord
+	CHORD_OFF = 6
 	
 
 	def __init__(self, event_type, event_value):
@@ -88,12 +90,12 @@ class ViMusicEvent(object):
 			if not MIN_MIDI_PITCH <= event_value <= MAX_MIDI_PITCH:
 				raise ValueError('Invalid pitch value: %s' % event_value)
 		elif event_type == ViMusicEvent.TIME_SHIFT:
-			if not 0 <= event_value:
+			if not 1 <= event_value:
 				raise ValueError('Invalid time shift value: %s' % event_value)
 		elif event_type == ViMusicEvent.VELOCITY:
 			if not 1 <= event_value <= MAX_NUM_VELOCITY_BINS:
 				raise ValueError('Invalid velocity value: %s' % event_value)
-		elif event_type == ViMusicEvent.CHORD_ON:
+		elif event_type in (ViMusicEvent.CHORD_ON, ViMusicEvent.CHORD_OFF):
 			if not (_CHORD_SYMBOL_REGEX.match(event_value) or event_value == NO_CHORD):
 				raise valueError('Invalid chord: {}'.format(event_value))
 		else:
@@ -173,19 +175,9 @@ class ViMusic(events_lib.EventSequence):
 		and (instrument is None or note.instrument == instrument)]
 
 		chords = [chord for chord in quantized_sequence.text_annotations
-		if chord.annotation_type == CHORD_SYMBOL]
+		if chord.annotation_type == CHORD_SYMBOL and chord.quantized_step >= start_step]
 		chords = [chord for chord in chords
 		if chord.quantized_step >= start_step]
-		if len(chords) == 0: #make sure that there must be at least one chord
-			annotation = quantized_sequence.text_annotations.add()
-			annotation.time = start_step / steps_per_second
-			annotation.quantized_step = start_step
-			annotation.text = NO_CHORD
-			annotation.annotation_type = CHORD_SYMBOL
-			chords = [chord for chord in quantized_sequence.text_annotations
-			if chord.annotation_type == CHORD_SYMBOL]
-			chords = [chord for chord in chords
-			if chord.quantized_step >= start_step]
 		#sorting notes by start time, thenn with pitch
 		sorted_notes = sorted(notes, key=lambda note: (note.start_time, note.pitch))
 		sorted_chords = sorted(chords,key=lambda chord: chord.time)
@@ -197,10 +189,13 @@ class ViMusic(events_lib.EventSequence):
 		offsets = [(note.quantized_end_step, idx, ViMusicEvent.NOTE_OFF)
 				for idx, note in enumerate(sorted_notes)]
 
-		chord_events = sorted([(chord.quantized_step,idx,ViMusicEvent.CHORD_ON)
-				for idx, chord in enumerate(sorted_chords)],key=lambda e : (e[0],e[1]))
+		chord_onsets = [(chord.quantized_step,idx,ViMusicEvent.CHORD_ON)
+				for idx,chord in enumerate(sorted_chords)]
+		chord_offsets = [(chord.quantized_end_step,idx,ViMusicEvent.CHORD_OFF)
+				for idx,chord in enumerate(sorted_chords)]
 
 		note_events = sorted(onsets + offsets)
+		chord_events = sorted(chord_onsets + chord_offsets)
 
 		events = sorted(note_events + chord_events,
 		key = lambda e : (e[0],e[1]))
@@ -235,7 +230,7 @@ class ViMusic(events_lib.EventSequence):
 					event_value=current_velocity_bin))
 
 
-			if status == ViMusicEvent.CHORD_ON:
+			if status in (ViMusicEvent.CHORD_ON,ViMusicEvent.CHORD_OFF):
 				vi_events.append(
 				ViMusicEvent(event_type=status,
 				event_value=sorted_chords[idx].text))
@@ -371,6 +366,8 @@ class ViMusic(events_lib.EventSequence):
 				strs.append('(%s, TIME_SHIFT)' % event.event_value)
 			elif event.event_type == ViMusicEvent.CHORD_ON:
 				strs.append('(%s, CHORD_ON)' % event.event_value)
+			elif event.event_type == ViMusicEvent.CHORD_OFF:
+				strs.append('(%s, CHORD_OFF)' % event.event_value)
 			else:
 				raise ValueError('Unknown event type: %s' % event.event_type)
 		return str(strs)
@@ -421,11 +418,14 @@ class ViMusic(events_lib.EventSequence):
 		# Map pitch to list because one pitch may be active multiple times.
 		#initialize dict, but default type of value is list
 		pitch_start_steps_and_velocities = collections.defaultdict(list)
+		chord_start_steps = collections.defaultdict(list)
 		chord_set = set()
 		for i, event in enumerate(self):
 			if event.event_type == ViMusicEvent.NOTE_ON:
 				pitch_start_steps_and_velocities[event.event_value].append(
 				(step, velocity))
+			elif event.event_type == ViMusicEvent.CHORD_ON:
+				chord_start_steps[event.event_value].append(step)
 			elif event.event_type == ViMusicEvent.NOTE_OFF:
 				if not pitch_start_steps_and_velocities[event.event_value]:
 					tf.logging.debug(
@@ -454,15 +454,43 @@ class ViMusic(events_lib.EventSequence):
 					note.is_drum = is_drum
 					if note.end_time > sequence.total_time:
 						sequence.total_time = note.end_time
+			elif event.event_type == ViMusicEvent.CHORD_OFF:
+				if not chord_start_steps[event.event_value]:
+					tf.logging.debug(
+					'Ignoring CHORD_OFF at position %d with no previous CHORD_ON' % i)
+				else:
+					# Create a note for the pitch that is now ending.
+					chord_start_step = chord_start_steps[
+						event.event_value][0]
+					chord_start_steps[event.event_value] = (
+						chord_start_steps[event.event_value][1:])
+					if step == chord_start_step:
+						tf.logging.debug(
+						'Ignoring chord with zero duration at step %d' % step)
+						continue
+					pitches = chord_symbols_lib.chord_symbol_pitches(event.event_value)
+					pitches = [p + 48 for p in pitches]
+					for p in pitches:
+						note = sequence.notes.add()
+						note.start_time = (chord_start_step * seconds_per_step +
+									sequence_start_time)
+						note.end_time = step * seconds_per_step + sequence_start_time
+						if (max_note_duration and
+							note.end_time - note.start_time > max_note_duration):
+							note.end_time = note.start_time + max_note_duration
+						note.pitch = p
+						note.velocity = pitch_velocity
+						note.instrument = instrument
+						note.program = program
+						note.is_drum = is_drum
+						if note.end_time > sequence.total_time:
+							sequence.total_time = note.end_time
 			elif event.event_type == ViMusicEvent.TIME_SHIFT:
 				step += event.event_value
 			elif event.event_type == ViMusicEvent.VELOCITY:
 				assert self._num_velocity_bins
 				velocity = velocity_bin_to_velocity(
 					event.event_value, self._num_velocity_bins)
-			elif event.event_type == ViMusicEvent.CHORD_ON:
-				chord_set.add((event.event_value,step))
-
 
 		# There could be remaining pitches that were never ended. End them now
 		# and create notes.
@@ -487,25 +515,5 @@ class ViMusic(events_lib.EventSequence):
 				note.is_drum = is_drum
 				if note.end_time > sequence.total_time:
 					sequence.total_time = note.end_time
-
-		if not render_chord_from_annotation:
-			for chord in chord_set:
-				annotation = sequence.text_annotations.add()
-				annotation.time = chord[1] / steps_per_second
-				annotation.quantized_step = chord[1]
-				annotation.text = chord[0]
-				annotation.annotation_type = CHORD_SYMBOL
-		else:
-			chord_set = sorted(chord_set, lambda x: x[1])
-			chord_set.append(("N.C",step))
-			for i, chord in enumerate(chord_set[:-1]):
-				pitches = chord_symbols_lib.chord_symbol_pitches(chord[0])
-				start_quantized_step = chord[1]
-				end_quantized_step = chord_set[i + 1][1]
-				start_time = start_quantized_step / steps_per_second
-				end_time = end_quantized_step / steps_per_second
-				for pitch in pitches: 
-					pass
-
 
 		return sequence

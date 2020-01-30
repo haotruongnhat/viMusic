@@ -135,7 +135,8 @@ def get_bundle():
   if FLAGS.bundle_file is None:
     return None
   bundle_file = os.path.expanduser(FLAGS.bundle_file)
-  return magenta.music.read_bundle_file(bundle_file)
+  from magenta.models.shared import sequence_generator_bundle
+  return sequence_generator_bundle.read_bundle_file(bundle_file)
 
 
 def run_with_flags(generator):
