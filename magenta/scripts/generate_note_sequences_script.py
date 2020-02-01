@@ -1,17 +1,14 @@
-import os, sys
-sys.path.append(os.getcwd())
-import time
 from pathlib import Path
-
+import pyperclip
 
 ### Sequence related
 #########
 SCRIPT_DIR = "magenta/scripts"
 
-INPUT_DIR = ""
-OUTPUT_DIR = ""
+INPUT_DIR = "/Users/hao/Desktop/Projects/viMusic/dataset/sad"
+OUTPUT_DIR = "/Users/hao/Desktop/Projects/viMusic/dataset/sad"
 
-RECURSIVE = True
+RECURSIVE = False
 script_path = Path(SCRIPT_DIR) / "convert_dir_to_note_sequences.py"
 input_dir = Path(INPUT_DIR)
 output_file = Path(OUTPUT_DIR) / "notesequences.tfrecord"
@@ -28,4 +25,6 @@ command = ["python", \
             output_file, \
             "--recursive" if RECURSIVE else ""]
 
-print(" ".join(command))
+command_in_use = " ".join(command)
+pyperclip.copy(command_in_use)
+print(command_in_use)

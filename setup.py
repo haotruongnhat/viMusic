@@ -64,7 +64,8 @@ REQUIRED_PACKAGES = [
     'cairosvg',
     'PyPDF2',
     'natsort',
-    'xlwt'
+    'xlwt',
+    'pyperclip'
 ]
 
 # pylint:disable=line-too-long
