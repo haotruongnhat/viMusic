@@ -14,15 +14,14 @@
 
 """Create a dataset of SequenceExamples from NoteSequence protos.
 
-This script will extract polyphonic tracks from NoteSequence protos and save
-them to TensorFlow's SequenceExample protos for input to the polyphonic RNN
-models.
+This script will extract melodies and chords from NoteSequence protos and save
+them to TensorFlow's SequenceExample protos for input to the vivi RNN models.
 """
 
 import os
 
-from magenta.models.polyphony_rnn import polyphony_model
-from magenta.models.polyphony_rnn import polyphony_rnn_pipeline
+from magenta.models.vivi_rnn import vivi_rnn_config_flags
+from magenta.models.vivi_rnn import vivi_rnn_pipeline
 from magenta.pipelines import pipeline
 import tensorflow as tf
 
@@ -48,18 +47,16 @@ flags.DEFINE_string(
 def main(unused_argv):
   tf.logging.set_verbosity(FLAGS.log)
 
-  pipeline_instance = polyphony_rnn_pipeline.get_pipeline(
-      min_steps=80,  # 5 measures
-      max_steps=512,
-      eval_ratio=FLAGS.eval_ratio,
-      config=polyphony_model.default_configs['polyphony'])
+  config = vivi_rnn_config_flags.config_from_flags()
+  pipeline_instance = vivi_rnn_pipeline.get_pipeline(
+      config, FLAGS.eval_ratio)
 
-  input_dir = os.path.expanduser(FLAGS.input)
-  output_dir = os.path.expanduser(FLAGS.output_dir)
+  FLAGS.input = os.path.expanduser(FLAGS.input)
+  FLAGS.output_dir = os.path.expanduser(FLAGS.output_dir)
   pipeline.run_pipeline_serial(
       pipeline_instance,
-      pipeline.tf_record_iterator(input_dir, pipeline_instance.input_type),
-      output_dir)
+      pipeline.tf_record_iterator(FLAGS.input, pipeline_instance.input_type),
+      FLAGS.output_dir)
 
 
 def console_entry_point():

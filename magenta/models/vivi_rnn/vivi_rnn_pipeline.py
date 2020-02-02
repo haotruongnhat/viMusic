@@ -12,58 +12,77 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Pipeline to create PolyphonyRNN dataset."""
+"""Pipeline to create ViviRNN dataset."""
 
-from magenta.models.polyphony_rnn import polyphony_lib
+import magenta
 from magenta.music.protobuf import music_pb2
 from magenta.pipelines import dag_pipeline
-from magenta.pipelines import event_sequence_pipeline
+from magenta.pipelines import lead_sheet_pipelines
 from magenta.pipelines import note_sequence_pipelines
 from magenta.pipelines import pipeline
 from magenta.pipelines import pipelines_common
+from magenta.pipelines import statistics
+import tensorflow as tf
 
 
-class PolyphonicSequenceExtractor(pipeline.Pipeline):
-  """Extracts polyphonic tracks from a quantized NoteSequence."""
+class EncoderPipeline(pipeline.Pipeline):
+  """A Module that converts lead sheets to a model specific encoding."""
 
-  def __init__(self, min_steps, max_steps, name=None):
-    super(PolyphonicSequenceExtractor, self).__init__(
-        input_type=music_pb2.NoteSequence,
-        output_type=polyphony_lib.PolyphonicSequence,
+  def __init__(self, config, name):
+    """Constructs an EncoderPipeline.
+
+    Args:
+      config: An ViviRnnConfig that specifies the encoder/decoder,
+          pitch range, and transposition behavior.
+      name: A unique pipeline name.
+    """
+    super(EncoderPipeline, self).__init__(
+        input_type=magenta.music.LeadSheet,
+        output_type=tf.train.SequenceExample,
         name=name)
-    self._min_steps = min_steps
-    self._max_steps = max_steps
+    self._conditional_encoder_decoder = config.encoder_decoder
+    self._min_note = config.min_note
+    self._max_note = config.max_note
+    self._transpose_to_key = config.transpose_to_key
 
-  def transform(self, quantized_sequence):
-    poly_seqs, stats = polyphony_lib.extract_polyphonic_sequences(
-        quantized_sequence,
-        min_steps_discard=self._min_steps,
-        max_steps_discard=self._max_steps)
+  def transform(self, lead_sheet):
+    lead_sheet.squash(
+        self._min_note,
+        self._max_note,
+        self._transpose_to_key)
+    try:
+      encoded = [self._conditional_encoder_decoder.encode(
+          lead_sheet.chords, lead_sheet.melody)]
+      stats = []
+    except magenta.music.ChordEncodingError as e:
+      tf.logging.warning('Skipped lead sheet: %s', e)
+      encoded = []
+      stats = [statistics.Counter('chord_encoding_exception', 1)]
+    except magenta.music.ChordSymbolError as e:
+      tf.logging.warning('Skipped lead sheet: %s', e)
+      encoded = []
+      stats = [statistics.Counter('chord_symbol_exception', 1)]
     self._set_stats(stats)
-    return poly_seqs
+    return encoded
+
+  def get_stats(self):
+    return {}
 
 
-def get_pipeline(config, min_steps, max_steps, eval_ratio):
+def get_pipeline(config, eval_ratio):
   """Returns the Pipeline instance which creates the RNN dataset.
 
   Args:
-    config: An EventSequenceRnnConfig.
-    min_steps: Minimum number of steps for an extracted sequence.
-    max_steps: Maximum number of steps for an extracted sequence.
+    config: An ViviRnnConfig object.
     eval_ratio: Fraction of input to set aside for evaluation set.
 
   Returns:
     A pipeline.Pipeline instance.
   """
-  # Transpose up to a major third in either direction.
-  # Because our current dataset is Bach chorales, transposing more than a major
-  # third in either direction probably doesn't makes sense (e.g., because it is
-  # likely to exceed normal singing range).
-  transposition_range = range(-4, 5)
-
+  all_transpositions = config.transpose_to_key is None
   partitioner = pipelines_common.RandomPartition(
       music_pb2.NoteSequence,
-      ['eval_poly_tracks', 'training_poly_tracks'],
+      ['eval_lead_sheets', 'training_lead_sheets'],
       [eval_ratio])
   dag = {partitioner: dag_pipeline.DagInput(music_pb2.NoteSequence)}
 
@@ -72,19 +91,16 @@ def get_pipeline(config, min_steps, max_steps, eval_ratio):
         name='TimeChangeSplitter_' + mode)
     quantizer = note_sequence_pipelines.Quantizer(
         steps_per_quarter=config.steps_per_quarter, name='Quantizer_' + mode)
-    transposition_pipeline = note_sequence_pipelines.TranspositionPipeline(
-        transposition_range, name='TranspositionPipeline_' + mode)
-    poly_extractor = PolyphonicSequenceExtractor(
-        min_steps=min_steps, max_steps=max_steps, name='PolyExtractor_' + mode)
-    encoder_pipeline = event_sequence_pipeline.EncoderPipeline(
-        polyphony_lib.PolyphonicSequence, config.encoder_decoder,
-        name='EncoderPipeline_' + mode)
+    lead_sheet_extractor = lead_sheet_pipelines.LeadSheetExtractor(
+        min_bars=7, max_steps=512, min_unique_pitches=3, gap_bars=1.0,
+        ignore_polyphonic_notes=False, all_transpositions=all_transpositions,
+        name='LeadSheetExtractor_' + mode)
+    encoder_pipeline = EncoderPipeline(config, name='EncoderPipeline_' + mode)
 
-    dag[time_change_splitter] = partitioner[mode + '_poly_tracks']
+    dag[time_change_splitter] = partitioner[mode + '_lead_sheets']
     dag[quantizer] = time_change_splitter
-    dag[transposition_pipeline] = quantizer
-    dag[poly_extractor] = transposition_pipeline
-    dag[encoder_pipeline] = poly_extractor
-    dag[dag_pipeline.DagOutput(mode + '_poly_tracks')] = encoder_pipeline
+    dag[lead_sheet_extractor] = quantizer
+    dag[encoder_pipeline] = lead_sheet_extractor
+    dag[dag_pipeline.DagOutput(mode + '_lead_sheets')] = encoder_pipeline
 
   return dag_pipeline.DAGPipeline(dag)

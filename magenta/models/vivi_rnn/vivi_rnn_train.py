@@ -12,18 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Train and evaluate a polyphony RNN model."""
+"""Train and evaluate an vivi RNN model."""
 
 import os
 
 import magenta
-from magenta.models.polyphony_rnn import polyphony_model
+from magenta.models.vivi_rnn import vivi_rnn_config_flags
 from magenta.models.shared import events_rnn_graph
 from magenta.models.shared import events_rnn_train
 import tensorflow as tf
 
 FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_string('run_dir', '/tmp/polyphony_rnn/logdir/run1',
+tf.app.flags.DEFINE_string('run_dir', '/tmp/vivi_rnn/logdir/run1',
                            'Path to the directory where checkpoints and '
                            'summary events will be saved during training and '
                            'evaluation. Separate subdirectories for training '
@@ -32,7 +32,6 @@ tf.app.flags.DEFINE_string('run_dir', '/tmp/polyphony_rnn/logdir/run1',
                            'parent directory of `run_dir`. Point TensorBoard '
                            'to the parent directory of `run_dir` to see all '
                            'your runs.')
-tf.app.flags.DEFINE_string('config', 'polyphony', 'The config to use')
 tf.app.flags.DEFINE_string('sequence_example_file', '',
                            'Path to TFRecord file containing '
                            'tf.SequenceExample records for training or '
@@ -59,11 +58,6 @@ tf.app.flags.DEFINE_boolean('eval', False,
 tf.app.flags.DEFINE_string('log', 'INFO',
                            'The threshold for what messages will be logged '
                            'DEBUG, INFO, WARN, ERROR, or FATAL.')
-tf.app.flags.DEFINE_string(
-    'hparams', '',
-    'Comma-separated list of `name=value` pairs. For each pair, the value of '
-    'the hyperparameter named `name` is set to `value`. This mapping is merged '
-    'with the default hyperparameters.')
 
 
 def main(unused_argv):
@@ -80,8 +74,7 @@ def main(unused_argv):
       os.path.expanduser(FLAGS.sequence_example_file))
   run_dir = os.path.expanduser(FLAGS.run_dir)
 
-  config = polyphony_model.default_configs[FLAGS.config]
-  config.hparams.parse(FLAGS.hparams)
+  config = vivi_rnn_config_flags.config_from_flags()
 
   mode = 'eval' if FLAGS.eval else 'train'
   build_graph_fn = events_rnn_graph.get_build_graph_fn(

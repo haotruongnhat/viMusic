@@ -12,29 +12,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for polyphony_rnn_create_dataset."""
+"""Tests for vivi_rnn_create_dataset."""
 
 import magenta
-from magenta.models.polyphony_rnn import polyphony_encoder_decoder
-from magenta.models.polyphony_rnn import polyphony_rnn_pipeline
-from magenta.models.shared import events_rnn_model
+from magenta.models.vivi_rnn import vivi_rnn_model
+from magenta.models.vivi_rnn import vivi_rnn_pipeline
 from magenta.music.protobuf import music_pb2
+from magenta.pipelines import lead_sheet_pipelines
+from magenta.pipelines import note_sequence_pipelines
 import tensorflow as tf
 from tensorflow.contrib import training as contrib_training
 
 FLAGS = tf.app.flags.FLAGS
 
 
-class PolySeqPipelineTest(tf.test.TestCase):
+class ViviRNNPipelineTest(tf.test.TestCase):
 
   def setUp(self):
-    self.config = events_rnn_model.EventSequenceRnnConfig(
+    self.config = vivi_rnn_model.ViviRnnConfig(
         None,
-        magenta.music.OneHotEventSequenceEncoderDecoder(
-            polyphony_encoder_decoder.PolyphonyOneHotEncoding()),
-        contrib_training.HParams())
+        magenta.music.ConditionalEventSequenceEncoderDecoder(
+            magenta.music.OneHotEventSequenceEncoderDecoder(
+                magenta.music.MajorMinorChordOneHotEncoding()),
+            magenta.music.OneHotEventSequenceEncoderDecoder(
+                magenta.music.MelodyOneHotEncoding(0, 127))),
+        contrib_training.HParams(),
+        min_note=0,
+        max_note=127,
+        transpose_to_key=0)
 
-  def testPolyRNNPipeline(self):
+  def testMelodyRNNPipeline(self):
     note_sequence = magenta.common.testing_lib.parse_test_proto(
         music_pb2.NoteSequence,
         """
@@ -45,18 +52,36 @@ class PolySeqPipelineTest(tf.test.TestCase):
           qpm: 120}""")
     magenta.music.testing_lib.add_track_to_sequence(
         note_sequence, 0,
-        [(36, 100, 0.00, 2.0), (40, 55, 2.1, 5.0), (44, 80, 3.6, 5.0),
-         (41, 45, 5.1, 8.0), (64, 100, 6.6, 10.0), (55, 120, 8.1, 11.0),
-         (39, 110, 9.6, 9.7), (53, 99, 11.1, 14.1), (51, 40, 12.6, 13.0),
-         (55, 100, 14.1, 15.0), (54, 90, 15.6, 17.0), (60, 100, 17.1, 18.0)])
+        [(12, 100, 0.00, 2.0), (11, 55, 2.1, 5.0), (40, 45, 5.1, 8.0),
+         (55, 120, 8.1, 11.0), (53, 99, 11.1, 14.1)])
+    magenta.music.testing_lib.add_chords_to_sequence(
+        note_sequence,
+        [('N.C.', 0.0), ('Am9', 5.0), ('D7', 10.0)])
 
-    pipeline_inst = polyphony_rnn_pipeline.get_pipeline(
-        min_steps=80,  # 5 measures
-        max_steps=512,
-        eval_ratio=0,
-        config=self.config)
+    quantizer = note_sequence_pipelines.Quantizer(steps_per_quarter=4)
+    lead_sheet_extractor = lead_sheet_pipelines.LeadSheetExtractor(
+        min_bars=7, min_unique_pitches=5, gap_bars=1.0,
+        ignore_polyphonic_notes=False, all_transpositions=False)
+    conditional_encoding = magenta.music.ConditionalEventSequenceEncoderDecoder(
+        magenta.music.OneHotEventSequenceEncoderDecoder(
+            magenta.music.MajorMinorChordOneHotEncoding()),
+        magenta.music.OneHotEventSequenceEncoderDecoder(
+            magenta.music.MelodyOneHotEncoding(
+                self.config.min_note, self.config.max_note)))
+    quantized = quantizer.transform(note_sequence)[0]
+    lead_sheet = lead_sheet_extractor.transform(quantized)[0]
+    lead_sheet.squash(
+        self.config.min_note,
+        self.config.max_note,
+        self.config.transpose_to_key)
+    encoded = conditional_encoding.encode(lead_sheet.chords, lead_sheet.melody)
+    expected_result = {'training_lead_sheets': [encoded],
+                       'eval_lead_sheets': []}
+
+    pipeline_inst = vivi_rnn_pipeline.get_pipeline(
+        self.config, eval_ratio=0.0)
     result = pipeline_inst.transform(note_sequence)
-    self.assertTrue(len(result['training_poly_tracks']))
+    self.assertEqual(expected_result, result)
 
 
 if __name__ == '__main__':
