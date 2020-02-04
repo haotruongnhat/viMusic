@@ -19,6 +19,7 @@ import copy
 import magenta
 from magenta.models.shared import events_rnn_model
 import magenta.music as mm
+from magenta.models.vivi_rnn import vivi_encoder_decoder
 from tensorflow.contrib import training as contrib_training
 
 DEFAULT_MIN_NOTE = 48
@@ -154,8 +155,7 @@ default_configs = {
             magenta.music.ConditionalEventSequenceEncoderDecoder(
                 magenta.music.PitchChordsEncoderDecoder(),
                 magenta.music.OneHotEventSequenceEncoderDecoder(
-                    magenta.music.MelodyOneHotEncoding(
-                        min_note=DEFAULT_MIN_NOTE, max_note=DEFAULT_MAX_NOTE))),
+                    vivi_encoder_decoder.PolyphonyOneHotEncoding()),
             contrib_training.HParams(
                 batch_size=128,
                 rnn_layer_sizes=[256, 256, 256],
