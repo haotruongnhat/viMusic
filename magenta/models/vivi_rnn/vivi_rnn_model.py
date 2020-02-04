@@ -155,7 +155,7 @@ default_configs = {
             magenta.music.ConditionalEventSequenceEncoderDecoder(
                 magenta.music.PitchChordsEncoderDecoder(),
                 magenta.music.OneHotEventSequenceEncoderDecoder(
-                    vivi_encoder_decoder.PolyphonyOneHotEncoding()),
+                    vivi_encoder_decoder.PolyphonyOneHotEncoding())),
             contrib_training.HParams(
                 batch_size=128,
                 rnn_layer_sizes=[256, 256, 256],

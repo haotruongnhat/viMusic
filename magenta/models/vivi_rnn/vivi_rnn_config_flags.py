@@ -20,7 +20,7 @@ import tensorflow as tf
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string(
     'config',
-    None,
+    'vivi',
     "Which config to use. Must be one of 'basic_vivi', 'attention_vivi', "
     "or 'chord_pitches_vivi'.")
 tf.app.flags.DEFINE_string(

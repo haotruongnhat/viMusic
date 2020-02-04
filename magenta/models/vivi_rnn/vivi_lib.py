@@ -24,12 +24,9 @@ from magenta.music import constants
 from magenta.music import events_lib
 from magenta.music import sequences_lib
 from magenta.music import chords_lib
-from magenta.music import melodies_lib
 from magenta.models.polyphony_rnn import polyphony_lib
 from magenta.music.protobuf import music_pb2
 from magenta.pipelines import statistics
-from six.moves import range  # pylint: disable=redefined-builtin
-import tensorflow as tf
 
 DEFAULT_STEPS_PER_QUARTER = constants.DEFAULT_STEPS_PER_QUARTER
 MAX_MIDI_PITCH = constants.MAX_MIDI_PITCH
@@ -62,17 +59,80 @@ NOTE_KEYS = constants.NOTE_KEYS
 class MelodyChordsMismatchError(Exception):
   pass
 
-class OneBarPolyphonicSequence(polyphony_lib.PolyphonicSequence):
-  def __init__(self, quantized_sequence=None, steps_per_bar=DEFAULT_STEPS_PER_BAR,
-            steps_per_quarter=DEFAULT_STEPS_PER_QUARTER, start_step=0):
-    super(OneBarPolyphonicSequence, self).__init__(quantized_sequence=quantized_sequence, steps_per_quarter=steps_per_quarter,
-                start_step=0)
+class PolyphonicSequence(polyphony_lib.PolyphonicSequence):
+  def __init__(self, quantized_sequence=None,
+                    steps_per_bar=DEFAULT_STEPS_PER_BAR,
+                    steps_per_quarter=None, 
+                    start_step=0):
+    super(PolyphonicSequence, self).__init__(quantized_sequence=quantized_sequence, 
+                                              steps_per_quarter=steps_per_quarter,
+                                              start_step=0)
     self._steps_per_bar = steps_per_bar
 
   @property
   def steps_per_bar(self):
     return self._steps_per_bar
 
+def extract_polyphonic_sequences(
+    quantized_sequence, start_step=0, min_steps_discard=None,
+    max_steps_discard=None):
+  """Extracts a polyphonic track from the given quantized NoteSequence.
+
+  Currently, this extracts only one polyphonic sequence from a given track.
+
+  Args:
+    quantized_sequence: A quantized NoteSequence.
+    start_step: Start extracting a sequence at this time step. Assumed
+        to be the beginning of a bar.
+    min_steps_discard: Minimum length of tracks in steps. Shorter tracks are
+        discarded.
+    max_steps_discard: Maximum length of tracks in steps. Longer tracks are
+        discarded.
+
+  Returns:
+    poly_seqs: A python list of PolyphonicSequence instances.
+    stats: A dictionary mapping string names to `statistics.Statistic` objects.
+  """
+  sequences_lib.assert_is_relative_quantized_sequence(quantized_sequence)
+
+  stats = dict((stat_name, statistics.Counter(stat_name)) for stat_name in
+               ['polyphonic_tracks_discarded_too_short',
+                'polyphonic_tracks_discarded_too_long',
+                'polyphonic_tracks_discarded_more_than_1_program'])
+
+  steps_per_bar = sequences_lib.steps_per_bar_in_quantized_sequence(
+      quantized_sequence)
+
+  # Create a histogram measuring lengths (in bars not steps).
+  stats['polyphonic_track_lengths_in_bars'] = statistics.Histogram(
+      'polyphonic_track_lengths_in_bars',
+      [0, 1, 10, 20, 30, 40, 50, 100, 200, 500, 1000])
+
+  # Allow only 1 program.
+  programs = set()
+  for note in quantized_sequence.notes:
+    programs.add(note.program)
+  if len(programs) > 1:
+    stats['polyphonic_tracks_discarded_more_than_1_program'].increment()
+    return [], stats.values()
+
+  # Translate the quantized sequence into a PolyphonicSequence.
+  poly_seq = PolyphonicSequence(quantized_sequence,
+                                start_step=start_step)
+
+  poly_seqs = []
+  num_steps = poly_seq.num_steps
+
+  if min_steps_discard is not None and num_steps < min_steps_discard:
+    stats['polyphonic_tracks_discarded_too_short'].increment()
+  elif max_steps_discard is not None and num_steps > max_steps_discard:
+    stats['polyphonic_tracks_discarded_too_long'].increment()
+  else:
+    poly_seqs.append(poly_seq)
+    stats['polyphonic_track_lengths_in_bars'].increment(
+        num_steps // steps_per_bar)
+
+  return poly_seqs, stats.values()
 
 #########################################################
 # This class is based on lead_sheets_lib::LeadSheet class
@@ -111,7 +171,7 @@ class PolyphonicLeadSheet(events_lib.EventSequence):
 
   def _reset(self):
     """Clear events and reset object state."""
-    self._melody = OneBarPolyphonicSequence()
+    self._melody = PolyphonicSequence()
     self._chords = chords_lib.ChordProgression()
 
   def _from_melody_and_chords(self, melody, chords):
@@ -125,7 +185,8 @@ class PolyphonicLeadSheet(events_lib.EventSequence):
       MelodyChordsMismatchError: If the melody and chord progression differ
           in temporal resolution or position in the source sequence.
     """
-    if (len(melody) != len(chords) or
+
+    if (melody.num_steps != len(chords) or
         melody.steps_per_bar != chords.steps_per_bar or
         melody.steps_per_quarter != chords.steps_per_quarter or
         melody.start_step != chords.start_step or
@@ -214,7 +275,7 @@ class PolyphonicLeadSheet(events_lib.EventSequence):
     """
     melody_event, chord_event = event
     self._melody.append(melody_event)
-  self._chords.append(chord_event)
+    self._chords.append(chord_event)
 
   def to_sequence(self,
                   velocity=100,

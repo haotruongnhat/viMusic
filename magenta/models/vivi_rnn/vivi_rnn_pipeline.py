@@ -32,6 +32,7 @@ from magenta.pipelines import chord_pipelines
 from magenta.pipelines import melody_pipelines
 from magenta.models.polyphony_rnn import polyphony_lib
 from magenta.models.improv_rnn import improv_rnn_pipeline
+from magenta.music import constants
 
 from magenta.models.vivi_rnn import vivi_lib
 import tensorflow as tf
@@ -40,16 +41,12 @@ import copy
 class PolyphonicLeadSheetExtractor(pipeline.Pipeline):
   """Extracts polyphonic lead sheet fragments from a quantized NoteSequence."""
 
-  def __init__(self, min_bars=7, max_steps=512, min_unique_pitches=5,
-               gap_bars=1.0, name=None):
+  def __init__(self, name=None):
     super(PolyphonicLeadSheetExtractor, self).__init__(
         input_type=music_pb2.NoteSequence,
         output_type=vivi_lib.PolyphonicLeadSheet,
         name=name)
-    self._min_bars = min_bars
-    self._max_steps = max_steps
-    self._min_unique_pitches = min_unique_pitches
-    self._gap_bars = gap_bars
+    pass
 
   def transform(self, quantized_sequence):
     try:
@@ -66,16 +63,19 @@ class PolyphonicLeadSheetExtractor(pipeline.Pipeline):
     return lead_sheets
 
 def extract_polyphonic_lead_sheet_fragments(quantized_sequence,
-                                            min_steps=0, max_steps=100):
+                                            min_steps=constants.DEFAULT_STEPS_PER_BAR,
+                                            max_steps=None):
   sequences_lib.assert_is_relative_quantized_sequence(quantized_sequence)
   stats = dict([('empty_chord_progressions',
                  statistics.Counter('empty_chord_progressions'))])
 
-  melodies, melody_stats = polyphony_lib.extract_polyphonic_sequences(quantized_sequence,
-                                                                      min_steps_discard=min_steps,
-                                                                      max_steps_discard=max_steps)
-  chord_progressions, chord_stats = chord_pipelines.extract_chords_for_melodies(quantized_sequence, 
-                                                                                melodies)
+  melodies, melody_stats = \
+    vivi_lib.extract_polyphonic_sequences(quantized_sequence,
+                                      min_steps_discard=min_steps,
+                                      max_steps_discard=max_steps)
+  chord_progressions, chord_stats = \
+    chord_pipelines.extract_chords_for_melodies(quantized_sequence,
+                                                melodies)
   lead_sheets = []
   for melody, chords in zip(melodies, chord_progressions):
     # If `chords` is None, it's because a chord progression could not be
@@ -85,13 +85,7 @@ def extract_polyphonic_lead_sheet_fragments(quantized_sequence,
         stats['empty_chord_progressions'].increment()
       else:
         lead_sheet = vivi_lib.PolyphonicLeadSheet(melody, chords)
-        if True:#all_transpositions:
-          for amount in range(-6, 6):
-            transposed_lead_sheet = copy.deepcopy(lead_sheet)
-            transposed_lead_sheet.transpose(amount)
-            lead_sheets.append(transposed_lead_sheet)
-        else:
-          lead_sheets.append(lead_sheet)
+        lead_sheets.append(lead_sheet)
   return lead_sheets, list(stats.values()) + melody_stats + chord_stats
 
 class EncoderPipeline(pipeline.Pipeline):
@@ -106,22 +100,19 @@ class EncoderPipeline(pipeline.Pipeline):
       name: A unique pipeline name.
     """
     super(EncoderPipeline, self).__init__(
-        input_type=magenta.music.LeadSheet,
+        input_type=vivi_lib.PolyphonicLeadSheet,
         output_type=tf.train.SequenceExample,
         name=name)
     self._conditional_encoder_decoder = config.encoder_decoder
-    self._min_note = config.min_note
-    self._max_note = config.max_note
-    self._transpose_to_key = config.transpose_to_key
 
-  def transform(self, lead_sheet):
-    lead_sheet.squash(
-        self._min_note,
-        self._max_note,
-        self._transpose_to_key)
+  def transform(self, polyphonic_lead_sheet):
+    # lead_sheet.squash(
+    #     self._min_note,
+    #     self._max_note,
+    #     self._transpose_to_key)
     try:
       encoded = [self._conditional_encoder_decoder.encode(
-          lead_sheet.chords, lead_sheet.melody)]
+          polyphonic_lead_sheet.chords, polyphonic_lead_sheet.melody)]
       stats = []
     except magenta.music.ChordEncodingError as e:
       tf.logging.warning('Skipped lead sheet: %s', e)
@@ -147,10 +138,11 @@ def get_pipeline(config, eval_ratio):
   Returns:
     A pipeline.Pipeline instance.
   """
-  all_transpositions = config.transpose_to_key is None
+  transposition_range = range(-6, 6)
+  
   partitioner = pipelines_common.RandomPartition(
       music_pb2.NoteSequence,
-      ['eval_lead_sheets', 'training_lead_sheets'],
+      ['eval_polyphonic_lead_sheets', 'training_polyphonic_lead_sheets'],
       [eval_ratio])
   dag = {partitioner: dag_pipeline.DagInput(music_pb2.NoteSequence)}
 
@@ -159,17 +151,20 @@ def get_pipeline(config, eval_ratio):
         name='TimeChangeSplitter_' + mode)
     quantizer = note_sequence_pipelines.Quantizer(
         steps_per_quarter=config.steps_per_quarter, name='Quantizer_' + mode)
-    chord_infer = improv_rnn_pipeline.InferChordFromQuantizedSequence(name='ChordInfer_' + mode)
-    polyphonic_lead_sheet_extractor = PolyphonicLeadSheetExtractor(
-        min_bars=7, max_steps=512, min_unique_pitches=3, gap_bars=1.0,
-        name='PolyphonicLeadSheetExtractor_' + mode)
+    transposition_pipeline = note_sequence_pipelines.TranspositionPipeline(
+        transposition_range, name='TranspositionPipeline_' + mode)
+    chord_infer = \
+      improv_rnn_pipeline.InferChordFromQuantizedSequence(name='ChordInfer_' + mode)
+    polyphonic_lead_sheet_extractor = \
+      PolyphonicLeadSheetExtractor(name='PolyphonicLeadSheetExtractor_' + mode)
     encoder_pipeline = EncoderPipeline(config, name='EncoderPipeline_' + mode)
 
-    dag[time_change_splitter] = partitioner[mode + 'polyphonic_lead_sheets']
+    dag[time_change_splitter] = partitioner[mode + '_polyphonic_lead_sheets']
     dag[quantizer] = time_change_splitter
-    dag[chord_infer] = quantizer
+    dag[transposition_pipeline] = quantizer
+    dag[chord_infer] = transposition_pipeline
     dag[polyphonic_lead_sheet_extractor] = chord_infer
     dag[encoder_pipeline] = polyphonic_lead_sheet_extractor
-    dag[dag_pipeline.DagOutput(mode + 'polyphonic_lead_sheets')] = encoder_pipeline
+    dag[dag_pipeline.DagOutput(mode + '_polyphonic_lead_sheets')] = encoder_pipeline
 
   return dag_pipeline.DAGPipeline(dag)
