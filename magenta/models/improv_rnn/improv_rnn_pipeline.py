@@ -24,6 +24,21 @@ from magenta.pipelines import pipelines_common
 from magenta.pipelines import statistics
 import tensorflow as tf
 
+class InferChordFromQuantizedSequence(pipeline.Pipeline):
+  """ Infer chords from quantized NoteSequence"""
+  def __init__(self, name=None):
+    super(InferChordFromQuantizedSequence, self).__init__(
+      input_type=music_pb2.NoteSequence,
+      output_type=music_pb2.NoteSequence,
+      name=name)
+    pass
+  
+  def transform(self, quantized_sequence):
+    try:
+      magenta.music.infer_chords_for_sequence(quantized_sequence)
+      return [quantized_sequence]
+    except:
+      return []
 
 class EncoderPipeline(pipeline.Pipeline):
   """A Module that converts lead sheets to a model specific encoding."""
@@ -91,6 +106,7 @@ def get_pipeline(config, eval_ratio):
         name='TimeChangeSplitter_' + mode)
     quantizer = note_sequence_pipelines.Quantizer(
         steps_per_quarter=config.steps_per_quarter, name='Quantizer_' + mode)
+    chord_infer = InferChordFromQuantizedSequence(name='ChordInfer_' + mode)
     lead_sheet_extractor = lead_sheet_pipelines.LeadSheetExtractor(
         min_bars=7, max_steps=512, min_unique_pitches=3, gap_bars=1.0,
         ignore_polyphonic_notes=False, all_transpositions=all_transpositions,
@@ -99,7 +115,8 @@ def get_pipeline(config, eval_ratio):
 
     dag[time_change_splitter] = partitioner[mode + '_lead_sheets']
     dag[quantizer] = time_change_splitter
-    dag[lead_sheet_extractor] = quantizer
+    dag[chord_infer] = quantizer
+    dag[lead_sheet_extractor] = chord_infer
     dag[encoder_pipeline] = lead_sheet_extractor
     dag[dag_pipeline.DagOutput(mode + '_lead_sheets')] = encoder_pipeline
 

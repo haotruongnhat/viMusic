@@ -28,8 +28,6 @@ from magenta.pipelines import pipeline
 from magenta.pipelines import statistics
 import tensorflow as tf
 
-from magenta.models.vivi_rnn import vivi_lib
-
 class LeadSheetExtractor(pipeline.Pipeline):
   """Extracts lead sheet fragments from a quantized NoteSequence."""
 
@@ -38,7 +36,7 @@ class LeadSheetExtractor(pipeline.Pipeline):
                require_chords=True, all_transpositions=True, name=None):
     super(LeadSheetExtractor, self).__init__(
         input_type=music_pb2.NoteSequence,
-        output_type=vivi_lib.PolyphonicLeadSheet,
+        output_type=lead_sheets_lib.LeadSheet,
         name=name)
     self._min_bars = min_bars
     self._max_steps = max_steps

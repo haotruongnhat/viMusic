@@ -22,42 +22,38 @@ from magenta.pipelines import note_sequence_pipelines
 from magenta.pipelines import pipeline
 from magenta.pipelines import pipelines_common
 from magenta.pipelines import statistics
+from magenta.music import chord_symbols_lib
+from magenta.music import chords_lib
+from magenta.music import events_lib
+from magenta.music import lead_sheets_lib
+from magenta.music import LeadSheet
+from magenta.music import sequences_lib
+from magenta.pipelines import chord_pipelines
+from magenta.pipelines import melody_pipelines
+from magenta.models.polyphony_rnn import polyphony_lib
+from magenta.models.improv_rnn import improv_rnn_pipeline
 
 from magenta.models.vivi_rnn import vivi_lib
 import tensorflow as tf
-
+import copy
 
 class PolyphonicLeadSheetExtractor(pipeline.Pipeline):
   """Extracts polyphonic lead sheet fragments from a quantized NoteSequence."""
 
   def __init__(self, min_bars=7, max_steps=512, min_unique_pitches=5,
-               gap_bars=1.0, ignore_polyphonic_notes=False, filter_drums=True,
-               require_chords=True, all_transpositions=True, name=None):
+               gap_bars=1.0, name=None):
     super(PolyphonicLeadSheetExtractor, self).__init__(
         input_type=music_pb2.NoteSequence,
-        output_type=lead_sheets_lib.LeadSheet,
+        output_type=vivi_lib.PolyphonicLeadSheet,
         name=name)
     self._min_bars = min_bars
     self._max_steps = max_steps
     self._min_unique_pitches = min_unique_pitches
     self._gap_bars = gap_bars
-    self._ignore_polyphonic_notes = ignore_polyphonic_notes
-    self._filter_drums = filter_drums
-    self._require_chords = require_chords
-    self._all_transpositions = all_transpositions
 
   def transform(self, quantized_sequence):
     try:
-      lead_sheets, stats = extract_lead_sheet_fragments(
-          quantized_sequence,
-          min_bars=self._min_bars,
-          max_steps_truncate=self._max_steps,
-          min_unique_pitches=self._min_unique_pitches,
-          gap_bars=self._gap_bars,
-          ignore_polyphonic_notes=self._ignore_polyphonic_notes,
-          filter_drums=self._filter_drums,
-          require_chords=self._require_chords,
-          all_transpositions=self._all_transpositions)
+      lead_sheets, stats = extract_polyphonic_lead_sheet_fragments(quantized_sequence)
     except events_lib.NonIntegerStepsPerBarError as detail:
       tf.logging.warning('Skipped sequence: %s', detail)
       lead_sheets = []
@@ -67,85 +63,29 @@ class PolyphonicLeadSheetExtractor(pipeline.Pipeline):
       lead_sheets = []
       stats = [statistics.Counter('chord_symbol_exception', 1)]
     self._set_stats(stats)
-    return lead_sheets 
+    return lead_sheets
 
 def extract_polyphonic_lead_sheet_fragments(quantized_sequence,
-                                 search_start_step=0,
-                                 min_bars=7,
-                                 max_steps_truncate=None,
-                                 max_steps_discard=None,
-                                 gap_bars=1.0,
-                                 min_unique_pitches=5,
-                                 ignore_polyphonic_notes=True,
-                                 pad_end=False,
-                                 filter_drums=True,
-                                 require_chords=False,
-                                 all_transpositions=False):
-  """Extracts a list of lead sheet fragments from a quantized NoteSequence.
-
-  This function first extracts melodies using melodies_lib.extract_melodies,
-  then extracts the chords underlying each melody using
-  chords_lib.extract_chords_for_melodies.
-
-  Args:
-    quantized_sequence: A quantized NoteSequence object.
-    search_start_step: Start searching for a melody at this time step. Assumed
-        to be the first step of a bar.
-    min_bars: Minimum length of melodies in number of bars. Shorter melodies are
-        discarded.
-    max_steps_truncate: Maximum number of steps in extracted melodies. If
-        defined, longer melodies are truncated to this threshold. If pad_end is
-        also True, melodies will be truncated to the end of the last bar below
-        this threshold.
-    max_steps_discard: Maximum number of steps in extracted melodies. If
-        defined, longer melodies are discarded.
-    gap_bars: A melody comes to an end when this number of bars (measures) of
-        silence is encountered.
-    min_unique_pitches: Minimum number of unique notes with octave equivalence.
-        Melodies with too few unique notes are discarded.
-    ignore_polyphonic_notes: If True, melodies will be extracted from
-        `quantized_sequence` tracks that contain polyphony (notes start at the
-        same time). If False, tracks with polyphony will be ignored.
-    pad_end: If True, the end of the melody will be padded with NO_EVENTs so
-        that it will end at a bar boundary.
-    filter_drums: If True, notes for which `is_drum` is True will be ignored.
-    require_chords: If True, only return lead sheets that have at least one
-        chord other than NO_CHORD. If False, lead sheets with only melody will
-        also be returned.
-    all_transpositions: If True, also transpose each lead sheet fragment into
-        all 12 keys.
-
-  Returns:
-    A python list of LeadSheet instances.
-
-  Raises:
-    NonIntegerStepsPerBarError: If `quantized_sequence`'s bar length
-        (derived from its time signature) is not an integer number of time
-        steps.
-  """
+                                            min_steps=0, max_steps=100):
   sequences_lib.assert_is_relative_quantized_sequence(quantized_sequence)
   stats = dict([('empty_chord_progressions',
                  statistics.Counter('empty_chord_progressions'))])
-  melodies, melody_stats = melody_pipelines.extract_melodies(
-      quantized_sequence, search_start_step=search_start_step,
-      min_bars=min_bars, max_steps_truncate=max_steps_truncate,
-      max_steps_discard=max_steps_discard, gap_bars=gap_bars,
-      min_unique_pitches=min_unique_pitches,
-      ignore_polyphonic_notes=ignore_polyphonic_notes, pad_end=pad_end,
-      filter_drums=filter_drums)
-  chord_progressions, chord_stats = chord_pipelines.extract_chords_for_melodies(
-      quantized_sequence, melodies)
+
+  melodies, melody_stats = polyphony_lib.extract_polyphonic_sequences(quantized_sequence,
+                                                                      min_steps_discard=min_steps,
+                                                                      max_steps_discard=max_steps)
+  chord_progressions, chord_stats = chord_pipelines.extract_chords_for_melodies(quantized_sequence, 
+                                                                                melodies)
   lead_sheets = []
   for melody, chords in zip(melodies, chord_progressions):
     # If `chords` is None, it's because a chord progression could not be
     # extracted for this particular melody.
     if chords is not None:
-      if require_chords and all(chord == chords_lib.NO_CHORD
-                                for chord in chords):
+      if all(chord == chords_lib.NO_CHORD for chord in chords):
         stats['empty_chord_progressions'].increment()
       else:
-        lead_sheet = LeadSheet(melody, chords)
-        if all_transpositions:
+        lead_sheet = vivi_lib.PolyphonicLeadSheet(melody, chords)
+        if True:#all_transpositions:
           for amount in range(-6, 6):
             transposed_lead_sheet = copy.deepcopy(lead_sheet)
             transposed_lead_sheet.transpose(amount)
@@ -153,9 +93,6 @@ def extract_polyphonic_lead_sheet_fragments(quantized_sequence,
         else:
           lead_sheets.append(lead_sheet)
   return lead_sheets, list(stats.values()) + melody_stats + chord_stats
-
-
-
 
 class EncoderPipeline(pipeline.Pipeline):
   """A Module that converts lead sheets to a model specific encoding."""
@@ -200,7 +137,6 @@ class EncoderPipeline(pipeline.Pipeline):
   def get_stats(self):
     return {}
 
-
 def get_pipeline(config, eval_ratio):
   """Returns the Pipeline instance which creates the RNN dataset.
 
@@ -223,16 +159,17 @@ def get_pipeline(config, eval_ratio):
         name='TimeChangeSplitter_' + mode)
     quantizer = note_sequence_pipelines.Quantizer(
         steps_per_quarter=config.steps_per_quarter, name='Quantizer_' + mode)
-    lead_sheet_extractor = PolyphonicLeadSheetExtractor(
+    chord_infer = improv_rnn_pipeline.InferChordFromQuantizedSequence(name='ChordInfer_' + mode)
+    polyphonic_lead_sheet_extractor = PolyphonicLeadSheetExtractor(
         min_bars=7, max_steps=512, min_unique_pitches=3, gap_bars=1.0,
-        ignore_polyphonic_notes=False, all_transpositions=all_transpositions,
-        name='LeadSheetExtractor_' + mode)
+        name='PolyphonicLeadSheetExtractor_' + mode)
     encoder_pipeline = EncoderPipeline(config, name='EncoderPipeline_' + mode)
 
-    dag[time_change_splitter] = partitioner[mode + '_lead_sheets']
+    dag[time_change_splitter] = partitioner[mode + 'polyphonic_lead_sheets']
     dag[quantizer] = time_change_splitter
-    dag[lead_sheet_extractor] = quantizer
-    dag[encoder_pipeline] = lead_sheet_extractor
-    dag[dag_pipeline.DagOutput(mode + '_lead_sheets')] = encoder_pipeline
+    dag[chord_infer] = quantizer
+    dag[polyphonic_lead_sheet_extractor] = chord_infer
+    dag[encoder_pipeline] = polyphonic_lead_sheet_extractor
+    dag[dag_pipeline.DagOutput(mode + 'polyphonic_lead_sheets')] = encoder_pipeline
 
   return dag_pipeline.DAGPipeline(dag)

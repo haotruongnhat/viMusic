@@ -25,6 +25,7 @@ from magenta.music import events_lib
 from magenta.music import sequences_lib
 from magenta.music import chords_lib
 from magenta.music import melodies_lib
+from magenta.models.polyphony_rnn import polyphony_lib
 from magenta.music.protobuf import music_pb2
 from magenta.pipelines import statistics
 from six.moves import range  # pylint: disable=redefined-builtin
@@ -45,27 +46,54 @@ DEFAULT_STEPS_PER_QUARTER = constants.DEFAULT_STEPS_PER_QUARTER
 # Shortcut to CHORD_SYMBOL annotation type.
 CHORD_SYMBOL = music_pb2.NoteSequence.TextAnnotation.CHORD_SYMBOL
 
+#####
+MELODY_NOTE_OFF = constants.MELODY_NOTE_OFF
+MELODY_NO_EVENT = constants.MELODY_NO_EVENT
+MIN_MELODY_EVENT = constants.MIN_MELODY_EVENT
+MAX_MELODY_EVENT = constants.MAX_MELODY_EVENT
+MIN_MIDI_PITCH = constants.MIN_MIDI_PITCH
+MAX_MIDI_PITCH = constants.MAX_MIDI_PITCH
+NOTES_PER_OCTAVE = constants.NOTES_PER_OCTAVE
+DEFAULT_STEPS_PER_BAR = constants.DEFAULT_STEPS_PER_BAR
+DEFAULT_STEPS_PER_QUARTER = constants.DEFAULT_STEPS_PER_QUARTER
+STANDARD_PPQ = constants.STANDARD_PPQ
+NOTE_KEYS = constants.NOTE_KEYS
 
 class MelodyChordsMismatchError(Exception):
   pass
 
+class OneBarPolyphonicSequence(polyphony_lib.PolyphonicSequence):
+  def __init__(self, quantized_sequence=None, steps_per_bar=DEFAULT_STEPS_PER_BAR,
+            steps_per_quarter=DEFAULT_STEPS_PER_QUARTER, start_step=0):
+    super(OneBarPolyphonicSequence, self).__init__(quantized_sequence=quantized_sequence, steps_per_quarter=steps_per_quarter,
+                start_step=0)
+    self._steps_per_bar = steps_per_bar
 
+  @property
+  def steps_per_bar(self):
+    return self._steps_per_bar
+
+
+#########################################################
+# This class is based on lead_sheets_lib::LeadSheet class
+# Using PolyphonicSequence instead of Melody
+#########################################################
 class PolyphonicLeadSheet(events_lib.EventSequence):
   """A wrapper around Melody and ChordProgression.
 
   Attributes:
-    melody: A Melody object, the lead sheet melody.
+    melody: A PolyphonicSequence object, the lead sheet melody.
     chords: A ChordProgression object, the underlying chords.
   """
 
   def __init__(self, melody=None, chords=None):
-    """Construct a LeadSheet.
+    """Construct a PolyphonicLeadSheet.
 
     If `melody` and `chords` are specified, instantiate with the provided
     melody and chords.  Otherwise, create an empty LeadSheet.
 
     Args:
-      melody: A Melody object.
+      melody: A PolyphonicSequence object.
       chords: A ChordProgression object.
 
     Raises:
@@ -83,14 +111,14 @@ class PolyphonicLeadSheet(events_lib.EventSequence):
 
   def _reset(self):
     """Clear events and reset object state."""
-    self._melody = melodies_lib.Melody()
+    self._melody = OneBarPolyphonicSequence()
     self._chords = chords_lib.ChordProgression()
 
   def _from_melody_and_chords(self, melody, chords):
-    """Initializes a LeadSheet with a given melody and chords.
+    """Initializes a PolyphonicLeadSheet with a given melody and chords.
 
     Args:
-      melody: A Melody object.
+      melody: A PolyphonicSequence object.
       chords: A ChordProgression object.
 
     Raises:
@@ -135,7 +163,7 @@ class PolyphonicLeadSheet(events_lib.EventSequence):
                      copy.deepcopy(self._chords, memo))
 
   def __eq__(self, other):
-    if not isinstance(other, LeadSheet):
+    if not isinstance(other, PolyphonicLeadSheet):
       return False
     return (self._melody == other.melody and
             self._chords == other.chords)
@@ -186,7 +214,7 @@ class PolyphonicLeadSheet(events_lib.EventSequence):
     """
     melody_event, chord_event = event
     self._melody.append(melody_event)
-    self._chords.append(chord_event)
+  self._chords.append(chord_event)
 
   def to_sequence(self,
                   velocity=100,
