@@ -20,7 +20,7 @@ import tensorflow as tf
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string(
     'config',
-    None,
+    'chord_pitches_improv',
     "Which config to use. Must be one of 'basic_improv', 'attention_improv', "
     "or 'chord_pitches_improv'.")
 tf.app.flags.DEFINE_string(

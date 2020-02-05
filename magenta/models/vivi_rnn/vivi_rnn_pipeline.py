@@ -65,9 +65,14 @@ class PolyphonicLeadSheetExtractor(pipeline.Pipeline):
 def extract_polyphonic_lead_sheet_fragments(quantized_sequence,
                                             min_steps=constants.DEFAULT_STEPS_PER_BAR,
                                             max_steps=None):
+  tranposition_range = range(-6, 6)
+
   sequences_lib.assert_is_relative_quantized_sequence(quantized_sequence)
   stats = dict([('empty_chord_progressions',
                  statistics.Counter('empty_chord_progressions'))])
+
+  ##### Transpose melody and chords within range
+  # First, extract original polyphonic and chord progression
 
   melodies, melody_stats = \
     vivi_lib.extract_polyphonic_sequences(quantized_sequence,
@@ -76,16 +81,27 @@ def extract_polyphonic_lead_sheet_fragments(quantized_sequence,
   chord_progressions, chord_stats = \
     chord_pipelines.extract_chords_for_melodies(quantized_sequence,
                                                 melodies)
-  lead_sheets = []
-  for melody, chords in zip(melodies, chord_progressions):
-    # If `chords` is None, it's because a chord progression could not be
-    # extracted for this particular melody.
-    if chords is not None:
-      if all(chord == chords_lib.NO_CHORD for chord in chords):
-        stats['empty_chord_progressions'].increment()
-      else:
-        lead_sheet = vivi_lib.PolyphonicLeadSheet(melody, chords)
-        lead_sheets.append(lead_sheet)
+
+  for amount in tranposition_range:
+    melodies, melody_stats = \
+      vivi_lib.extract_polyphonic_sequences(quantized_sequence,
+                                        min_steps_discard=min_steps,
+                                        max_steps_discard=max_steps,
+                                        transpose_amount=amount)
+    lead_sheets = []
+    for melody, chords in zip(melodies, chord_progressions):
+      # If `chords` is None, it's because a chord progression could not be
+      # extracted for this particular melody.
+      if chords is not None:
+        if all(chord == chords_lib.NO_CHORD for chord in chords):
+          stats['empty_chord_progressions'].increment()
+        else:
+            transposed_chords = copy.deepcopy(chords)
+            transposed_chords.transpose(amount)
+
+            lead_sheet = vivi_lib.PolyphonicLeadSheet(melody, transposed_chords)
+            lead_sheets.append(lead_sheet)
+    
   return lead_sheets, list(stats.values()) + melody_stats + chord_stats
 
 class EncoderPipeline(pipeline.Pipeline):
@@ -138,8 +154,6 @@ def get_pipeline(config, eval_ratio):
   Returns:
     A pipeline.Pipeline instance.
   """
-  transposition_range = range(-6, 6)
-  
   partitioner = pipelines_common.RandomPartition(
       music_pb2.NoteSequence,
       ['eval_polyphonic_lead_sheets', 'training_polyphonic_lead_sheets'],
@@ -151,18 +165,15 @@ def get_pipeline(config, eval_ratio):
         name='TimeChangeSplitter_' + mode)
     quantizer = note_sequence_pipelines.Quantizer(
         steps_per_quarter=config.steps_per_quarter, name='Quantizer_' + mode)
-    transposition_pipeline = note_sequence_pipelines.TranspositionPipeline(
-        transposition_range, name='TranspositionPipeline_' + mode)
     chord_infer = \
-      improv_rnn_pipeline.InferChordFromQuantizedSequence(name='ChordInfer_' + mode)
+        improv_rnn_pipeline.InferChordFromQuantizedSequence(name='ChordInfer_' + mode)
     polyphonic_lead_sheet_extractor = \
       PolyphonicLeadSheetExtractor(name='PolyphonicLeadSheetExtractor_' + mode)
     encoder_pipeline = EncoderPipeline(config, name='EncoderPipeline_' + mode)
 
     dag[time_change_splitter] = partitioner[mode + '_polyphonic_lead_sheets']
     dag[quantizer] = time_change_splitter
-    dag[transposition_pipeline] = quantizer
-    dag[chord_infer] = transposition_pipeline
+    dag[chord_infer] = quantizer
     dag[polyphonic_lead_sheet_extractor] = chord_infer
     dag[encoder_pipeline] = polyphonic_lead_sheet_extractor
     dag[dag_pipeline.DagOutput(mode + '_polyphonic_lead_sheets')] = encoder_pipeline

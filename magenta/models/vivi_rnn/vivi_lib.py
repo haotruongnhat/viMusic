@@ -61,21 +61,45 @@ class MelodyChordsMismatchError(Exception):
 
 class PolyphonicSequence(polyphony_lib.PolyphonicSequence):
   def __init__(self, quantized_sequence=None,
-                    steps_per_bar=DEFAULT_STEPS_PER_BAR,
+                    steps_per_bar=None,
                     steps_per_quarter=None, 
                     start_step=0):
     super(PolyphonicSequence, self).__init__(quantized_sequence=quantized_sequence, 
                                               steps_per_quarter=steps_per_quarter,
                                               start_step=0)
-    self._steps_per_bar = steps_per_bar
+
+    assert (quantized_sequence, steps_per_bar).count(None) == 1
+
+    steps_per_bar_float = sequences_lib.steps_per_bar_in_quantized_sequence(
+        quantized_sequence)
+    if steps_per_bar_float % 1 != 0:
+      raise events_lib.NonIntegerStepsPerBarError(
+          'There are %f timesteps per bar. Time signature: %d/%d' %
+          (steps_per_bar_float, quantized_sequence.time_signature.numerator,
+           quantized_sequence.time_signature.denominator))
+    self._steps_per_bar = int(steps_per_bar_float)
+
+  def __len__(self):
+    return self.num_steps
 
   @property
   def steps_per_bar(self):
     return self._steps_per_bar
 
+def ns_transpose(ns, amount, stats):
+  """Transposes a note sequence by the specified amount."""
+  ts = copy.deepcopy(ns)
+  for note in ts.notes:
+    if not note.is_drum:
+      note.pitch += amount
+      if note.pitch < constants.MIN_MIDI_PITCH or note.pitch > constants.MAX_MIDI_PITCH:
+        stats['transpose_skipped_due_to_range_exceeded'].increment()
+        return None
+  return ts
+
 def extract_polyphonic_sequences(
     quantized_sequence, start_step=0, min_steps_discard=None,
-    max_steps_discard=None):
+    max_steps_discard=None, transpose_amount=0):
   """Extracts a polyphonic track from the given quantized NoteSequence.
 
   Currently, this extracts only one polyphonic sequence from a given track.
@@ -98,7 +122,8 @@ def extract_polyphonic_sequences(
   stats = dict((stat_name, statistics.Counter(stat_name)) for stat_name in
                ['polyphonic_tracks_discarded_too_short',
                 'polyphonic_tracks_discarded_too_long',
-                'polyphonic_tracks_discarded_more_than_1_program'])
+                'polyphonic_tracks_discarded_more_than_1_program',
+                'transpose_skipped_due_to_range_exceeded'])
 
   steps_per_bar = sequences_lib.steps_per_bar_in_quantized_sequence(
       quantized_sequence)
@@ -116,8 +141,11 @@ def extract_polyphonic_sequences(
     stats['polyphonic_tracks_discarded_more_than_1_program'].increment()
     return [], stats.values()
 
+  # Transpose note sequences by transpose amount.
+  ts = ns_transpose(quantized_sequence, transpose_amount, stats)
+
   # Translate the quantized sequence into a PolyphonicSequence.
-  poly_seq = PolyphonicSequence(quantized_sequence,
+  poly_seq = PolyphonicSequence(ts,
                                 start_step=start_step)
 
   poly_seqs = []
@@ -132,7 +160,8 @@ def extract_polyphonic_sequences(
     stats['polyphonic_track_lengths_in_bars'].increment(
         num_steps // steps_per_bar)
 
-  return poly_seqs, stats.values()
+  return poly_seqs, list(stats.values())
+
 
 #########################################################
 # This class is based on lead_sheets_lib::LeadSheet class
@@ -186,7 +215,7 @@ class PolyphonicLeadSheet(events_lib.EventSequence):
           in temporal resolution or position in the source sequence.
     """
 
-    if (melody.num_steps != len(chords) or
+    if (len(melody) != len(chords) or
         melody.steps_per_bar != chords.steps_per_bar or
         melody.steps_per_quarter != chords.steps_per_quarter or
         melody.start_step != chords.start_step or
