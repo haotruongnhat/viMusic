@@ -30,6 +30,43 @@ DEFAULT_TRANSPOSE_TO_KEY = None
 class ViviRnnModel(events_rnn_model.EventSequenceRnnModel):
   """Class for RNN melody-given-chords generation models."""
 
+  def generate_polyphonic_sequence( self,
+                                    num_steps, primer_sequence, backing_chords,
+                                    temperature=1.0, beam_size=1,
+                                    branch_factor=1, steps_per_iteration=1,
+                                    modify_events_callback=None):
+    """
+    Generate a polyphonic track from a primer polyphonic track
+    and backing chords
+
+    Args:
+      num_steps: The integer length in steps of the final track, after
+          generation. Includes the primer.
+      primer_sequence: The primer sequence, a PolyphonicSequence object.
+      temperature: A float specifying how much to divide the logits by
+         before computing the softmax. Greater than 1.0 makes tracks more
+         random, less than 1.0 makes tracks less random.
+      beam_size: An integer, beam size to use when generating tracks via
+          beam search.
+      branch_factor: An integer, beam search branch factor to use.
+      steps_per_iteration: An integer, number of steps to take per beam search
+          iteration.
+      modify_events_callback: An optional callback for modifying the event list.
+          Can be used to inject events rather than having them generated. If not
+          None, will be called with 3 arguments after every event: the current
+          EventSequenceEncoderDecoder, a list of current EventSequences, and a
+          list of current encoded event inputs.
+    Returns:
+      The generated PolyphonicSequence object (which begins with the provided
+      primer track).
+    """
+    num_steps = len(backing_chords)
+    return self._generate_events(num_steps, primer_sequence, temperature,
+                              beam_size, branch_factor, steps_per_iteration,
+                              modify_events_callback=modify_events_callback,
+                              control_events=backing_chords)
+
+
   def generate_melody(self, primer_melody, backing_chords, temperature=1.0,
                       beam_size=1, branch_factor=1, steps_per_iteration=1):
     """Generate a melody from a primer melody and backing chords.

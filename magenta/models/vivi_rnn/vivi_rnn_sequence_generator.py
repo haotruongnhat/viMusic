@@ -21,7 +21,7 @@ from magenta.models.shared import sequence_generator
 import magenta.music as mm
 from magenta.pipelines import chord_pipelines
 from magenta.pipelines import melody_pipelines
-
+from magenta.models.vivi_rnn import vivi_lib
 
 class ViviRnnSequenceGenerator(sequence_generator.BaseSequenceGenerator):
   """Vivi RNN generation code as a SequenceGenerator interface."""
@@ -58,6 +58,7 @@ class ViviRnnSequenceGenerator(sequence_generator.BaseSequenceGenerator):
       qpm = input_sequence.tempos[0].qpm
     else:
       qpm = mm.DEFAULT_QUARTERS_PER_MINUTE
+
     steps_per_second = mm.steps_per_quarter_to_steps_per_second(
         self.steps_per_quarter, qpm)
 
@@ -85,6 +86,7 @@ class ViviRnnSequenceGenerator(sequence_generator.BaseSequenceGenerator):
       last_end_time = max(n.end_time for n in primer_sequence.notes)
     else:
       last_end_time = 0
+      
     if last_end_time >= generate_section.start_time:
       raise sequence_generator.SequenceGeneratorError(
           'Got GenerateSection request for section that is before or equal to '
@@ -99,10 +101,10 @@ class ViviRnnSequenceGenerator(sequence_generator.BaseSequenceGenerator):
         backing_sequence, self.steps_per_quarter)
 
     # Setting gap_bars to infinite ensures that the entire input will be used.
-    extracted_melodies, _ = melody_pipelines.extract_melodies(
-        quantized_primer_sequence, search_start_step=input_start_step,
-        min_bars=0, min_unique_pitches=1, gap_bars=float('inf'),
-        ignore_polyphonic_notes=True)
+    extracted_melodies, _ = \
+              vivi_lib.extract_polyphonic_sequences(quantized_primer_sequence,
+                                                    start_step=input_start_step)
+
     assert len(extracted_melodies) <= 1
 
     start_step = mm.quantize_to_step(
@@ -119,12 +121,12 @@ class ViviRnnSequenceGenerator(sequence_generator.BaseSequenceGenerator):
       # If no melody could be extracted, create an empty melody that starts 1
       # step before the request start_step. This will result in 1 step of
       # silence when the melody is extended below.
+
       steps_per_bar = int(
           mm.steps_per_bar_in_quantized_sequence(quantized_primer_sequence))
-      melody = mm.Melody([],
-                         start_step=max(0, start_step - 1),
-                         steps_per_bar=steps_per_bar,
-                         steps_per_quarter=self.steps_per_quarter)
+      melody = vivi_lib.PolyphonicSequence(steps_per_bar=steps_per_bar,
+                                            steps_per_quarter=self.steps_per_quarter,
+                                            start_step=start_step)
 
     extracted_chords, _ = chord_pipelines.extract_chords(
         quantized_backing_sequence)
@@ -150,8 +152,9 @@ class ViviRnnSequenceGenerator(sequence_generator.BaseSequenceGenerator):
                 for name, value_fn in arg_types.items()
                 if name in generator_options.args)
 
-    generated_melody = self._model.generate_melody(melody, chords, **args)
-    generated_lead_sheet = mm.LeadSheet(generated_melody, chords)
+    generated_polyphonic_sequence = self._model.generate_polyphonic_sequence(melody, chords, **args)
+    # generated_melody = self._model.generate_melody(melody, chords, **args)
+    generated_lead_sheet = vivi_lib.PolyphonicLeadSheet(generated_polyphonic_sequence, chords)
     generated_sequence = generated_lead_sheet.to_sequence(qpm=qpm)
     assert (generated_sequence.total_time - generate_section.end_time) <= 1e-5
     return generated_sequence

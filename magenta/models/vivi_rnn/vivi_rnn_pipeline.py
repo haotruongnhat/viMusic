@@ -63,6 +63,7 @@ class PolyphonicLeadSheetExtractor(pipeline.Pipeline):
     return lead_sheets
 
 def extract_polyphonic_lead_sheet_fragments(quantized_sequence,
+                                            search_start_step=0,
                                             min_steps=constants.DEFAULT_STEPS_PER_BAR,
                                             max_steps=None):
   tranposition_range = range(-6, 6)
@@ -76,6 +77,7 @@ def extract_polyphonic_lead_sheet_fragments(quantized_sequence,
 
   melodies, melody_stats = \
     vivi_lib.extract_polyphonic_sequences(quantized_sequence,
+                                      start_step= search_start_step,
                                       min_steps_discard=min_steps,
                                       max_steps_discard=max_steps)
   chord_progressions, chord_stats = \
@@ -85,6 +87,7 @@ def extract_polyphonic_lead_sheet_fragments(quantized_sequence,
   for amount in tranposition_range:
     melodies, melody_stats = \
       vivi_lib.extract_polyphonic_sequences(quantized_sequence,
+                                        start_step= search_start_step,
                                         min_steps_discard=min_steps,
                                         max_steps_discard=max_steps,
                                         transpose_amount=amount)
