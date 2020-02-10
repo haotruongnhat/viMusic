@@ -3,6 +3,10 @@ from magenta.pipelines import dag_pipeline
 from magenta.pipelines import note_sequence_pipelines
 from magenta.pipelines import pipelines_common
 
+from music_transformer.data_pipeline import PerformanceWithLyricsExtractor
+from music_transformer.data_pipeline import ConcatenateLyricsPipeline
+from music_transformer.data_pipeline import ViMusicEncoderPipeline
+
 def get_pipeline(config, min_events, max_events, eval_ratio):
     """Returns the Pipeline instance for the music transformer
 
@@ -27,6 +31,10 @@ def get_pipeline(config, min_events, max_events, eval_ratio):
         sustain_pipeline = note_sequence_pipelines.SustainPipeline(
         name='SustainPipeline_' + mode)
 
+        concantenate_pipeline = ConcatenateLyricsPipeline(
+        name='ConcatenatePipeline_' + mode
+        )
+
         #split note sequence at a regular interval
         splitter = note_sequence_pipelines.Splitter(
         hop_size_seconds=30.0, name='Splitter_' + mode)
@@ -39,10 +47,11 @@ def get_pipeline(config, min_events, max_events, eval_ratio):
         num_velocity_bins=config.num_velocity_bins,
         name='PerformanceWithLyricsExtractor_' + mode)
 
-        encoder_pipeline = ViMusicEncoderPipeline(config, name='ViMusicEncoderPipeline_' + mode)
+        encoder_pipeline = ViMusicEncoderPipeline(name='ViMusicEncoderPipeline_' + mode)
 
     dag[sustain_pipeline] = partitioner[mode + '_performances']
-    dag[splitter] = sustain_pipeline
+    dag[concantenate_pipeline] = sustain_pipeline
+    dag[splitter] = concantenate_pipeline
     dag[quantizer] = splitter
     dag[perf_with_ly_extractor] = quantizer
     dag[encoder_pipeline] = perf_with_ly_extractor
