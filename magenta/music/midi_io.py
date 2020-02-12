@@ -78,7 +78,7 @@ def midi_to_note_sequence(midi_data):
       raise MIDIConversionError('Midi decoding error %s: %s' %
                                 (sys.exc_info()[0], sys.exc_info()[1]))
   # pylint: enable=bare-except
-  from pdb import traceback()
+
   sequence = music_pb2.NoteSequence()
 
   # Populate header.

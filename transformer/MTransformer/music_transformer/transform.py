@@ -4,7 +4,7 @@ from enum import Enum
 import torch
 from ..vocab import *
 from functools import partial
-
+import music21
 SEQType = Enum('SEQType', 'Mask, Sentence, Melody, Chords, Empty')
 
 class MusicItem():
@@ -30,6 +30,8 @@ class MusicItem():
     @classmethod
     def from_npenc(cls, npenc, vocab, stream=None): return MusicItem(npenc2idxenc(npenc, vocab), vocab, stream)
     
+    
+    
     @classmethod
     def from_idx(cls, item, vocab):
         idx,pos = item
@@ -53,6 +55,11 @@ class MusicItem():
     
     def to_text(self, sep=' '): return self.vocab.textify(self.data, sep)
     
+    def save_to_mid(self, path_to_save):
+        mf = music21.midi.translate.streamToMidiFile(self.stream)
+        mf.open(path_to_save, 'wb')
+        mf.write()
+        mf.close()
     @property
     def position(self): 
         self._position = position_enc(self.data, self.vocab) if self._position is None else self._position
