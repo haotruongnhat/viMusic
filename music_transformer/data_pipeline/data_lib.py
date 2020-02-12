@@ -490,6 +490,7 @@ def convert_midi(root_dir, sub_dir, full_file_path):
     tf.logging.info('Converted MIDI file %s.', full_file_path)
     return sequence
     """
+    #midi conversion with lyrics is not supported yet!
     #TODO: Find a way to read midi
     return None
 
@@ -554,3 +555,20 @@ def convert_files(root_dir, sub_dir, writer, recursive=False):
         
         for recurse_sub_dir in recurse_sub_dirs:
             convert_files(root_dir, recurse_sub_dir, writer, recursive)
+
+def convert_directory(root_dir, output_file, recursive=False):
+    """Converts files to NoteSequences and writes to `output_file`.
+
+    Input files found in `root_dir` are converted to NoteSequence protos with the
+    basename of `root_dir` as the collection_name, and the relative path to the
+    file from `root_dir` as the filename. If `recursive` is true, recursively
+    converts any subdirectories of the specified directory.
+
+    Args:
+        root_dir: A string specifying a root directory.
+        output_file: Path to TFRecord file to write results to.
+        recursive: A boolean specifying whether or not recursively convert files
+            contained in subdirectories of the specified directory.
+    """
+    with note_sequence_io.NoteSequenceRecordWriter(output_file) as writer:
+        convert_files(root_dir, '', writer, recursive)
