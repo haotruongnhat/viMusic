@@ -28,6 +28,7 @@ if __name__ == '__main__':
     parser.add_argument('--input_dir', default='../data/npy', help='path to folder contain .npy data file')
     parser.add_argument('--data_savename', default='data_npy.pkl', help='name to save pkl file')
     parser.add_argument('--data_save_path', default='../data/npy', help='path to save pkl file')
+    parser.add_argument('--pretrained_path', default=None, help='path to pretrain model')
     parser.add_argument('--mode', default='train', help='choose between train/predict mode, default: train')
     parser.add_argument('--batch_size', default=16, type=int, help='batch_size')
     parser.add_argument('--epoch', default=2, type=int, help='number of epoch for training')
@@ -48,17 +49,17 @@ if __name__ == '__main__':
     # x, y = data.one_batch()
 
     # Process for training step
-
+    call_back = ['accuracy', ]
     batch_size = args.batch_size
     encode_position = args.encode_position
     dl_tfms = [batch_position_tfm] if encode_position else []
     data = music_transformer.load_data(args.input_dir, args.data_savename, bs=batch_size, 
                                         encode_position=encode_position, dl_tfms=dl_tfms)
 
-    cfg = config.default_config()
+    cfg = config.musicm_config()
     cfg['encode_position'] = encode_position
-    learn = music_transformer.music_model_learner(data, config=cfg)
-    learn.fit_one_cycle(args.epoch)
+    learn = music_transformer.music_model_learner(data, pretrained_path=args.pretrained_path, config=cfg)
+    learn.fit_one_cycle(args.epoch, callbacks=[SaveModelCallback(learn, every='improvement', monitor='accuracy', name='best')])
     learn.save('example')
     torch.cuda.empty_cache()
     #Note: developing predict step
