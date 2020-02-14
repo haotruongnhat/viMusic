@@ -13,7 +13,7 @@ from MTransformer.utils.midifile import *
 from MTransformer.utils.file_processing import process_all
 
 import fastai 
-
+from fastai.callbacks import SaveModelCallback
 # torch.cuda.set_device(1)
 
 midi_path = '../data/midi'
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     cfg = config.musicm_config()
     cfg['encode_position'] = encode_position
     learn = music_transformer.music_model_learner(data, pretrained_path=args.pretrained_path, config=cfg)
-    learn.fit_one_cycle(args.epoch, callbacks=[SaveModelCallback(learn, every='improvement', monitor='accuracy', name='best')])
-    learn.save('example')
+    learn.fit_one_cycle(args.epoch, callbacks=[SaveModelCallback(learn, every='improvement', monitor=['accuracy', 'valid_loss'], name='best')])
+    learn.save('best1')
     torch.cuda.empty_cache()
     #Note: developing predict step
