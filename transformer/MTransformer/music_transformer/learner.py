@@ -21,7 +21,7 @@ def music_model_learner(data:DataBunch, arch=MusicTransformerXL, config:dict=Non
     learn = MusicLearner(data, model, split_func=meta['split_lm'], **learn_kwargs)
 
     if pretrained_path: 
-        get_model(model).load_state_dict(state['model'], strict=False)
+        get_model(model).load_state_dict(state['model'], strict=True)
         if not hasattr(learn, 'opt'): learn.create_opt(defaults.lr, learn.wd)
         try:    learn.opt.load_state_dict(state['opt'])
         except: pass

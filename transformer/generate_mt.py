@@ -4,7 +4,7 @@ import numpy as np
 from pathlib import Path
 from MTransformer.numpy_encode import *
 from MTransformer.utils.file_processing import process_all, process_file
-from MTransformer.config import *
+from MTransformer import config
 from MTransformer.music_transformer import *
 from datetime import datetime
 from pdb import set_trace
@@ -14,8 +14,9 @@ def main():
     parser.add_argument('--output_dir', default='../data/npy', help='path to store generate midi files')
     parser.add_argument('--model_path', default='data/cached/models/MusicTransformer.pth', help='path to .pth model file')
     parser.add_argument('--mode', default='gfm', help='choose generate  mode: ["random", "gfm"], default: gfm')
+    parser.add_argument('--config', default='default', help='model config')
     parser.add_argument('--n_words', default=600, help='length of generate music')
-    parser.add_argument('--encode_position', default=False, type=bool)
+    parser.add_argument('--encode_position', default=True, type=bool)
     parser.add_argument('--num_outputs', default=3, type=int, help='Number of output midi')
     args = parser.parse_args()
 
@@ -33,12 +34,13 @@ def main():
     mode = args.mode 
     pretrained_path = args.model_path
     encode_position = args.encode_position
-    if not os.path.isdir(args.output_dir):
-        os.makedirs(args.output_dir)
 
-    config = default_config()
-    config['encode_position'] = encode_position
-    learn = music_model_learner(data, pretrained_path=pretrained_path, config = config.copy())
+    if args.config == 'default':
+        cfg = config.default_config()
+    else: 
+        cfg = config.musicm_config()
+    cfg['encode_position'] = encode_position
+    learn = music_model_learner(data, pretrained_path=pretrained_path, config = cfg.copy())
 
     midi_files = get_files(midi_path, recurse=True, extensions='.mid')
     # print(midi_files)
