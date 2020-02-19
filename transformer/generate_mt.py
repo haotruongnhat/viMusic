@@ -29,7 +29,8 @@ def main():
     mode = args.mode 
     pretrained_path = args.model_path
     encode_position = args.encode_position
-
+    if not os.path.isdir(args.output_dir):
+        os.makedirs(args.output_dir)
 
     config = default_config()
     config['encode_position'] = encode_position

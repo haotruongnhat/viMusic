@@ -3,14 +3,14 @@ import numpy as np
 import torch 
 import argparse
 
-from musicautobot.music_transformer.dataloader import MusicDataBunch, Midi2ItemProcessor, batch_position_tfm
+from MTransformer.music_transformer.dataloader import MusicDataBunch, Midi2ItemProcessor, batch_position_tfm
 
-from musicautobot.numpy_encode import *
-from musicautobot import config
-from musicautobot import music_transformer
+from MTransformer.numpy_encode import *
+from MTransformer import config
+from MTransformer import music_transformer
 # from musicautobot.music_transformer import *
-from musicautobot.utils.midifile import *
-from musicautobot.utils.file_processing import process_all
+from MTransformer.utils.midifile import *
+from MTransformer.utils.file_processing import process_all
 
 import fastai 
 
@@ -55,10 +55,10 @@ if __name__ == '__main__':
     data = music_transformer.load_data(args.input_data, args.data_savename, bs=batch_size, 
                                         encode_position=encode_position, dl_tfms=dl_tfms)
 
-    cfg = config.default_config()
+    cfg = config.musicm_config()
     cfg['encode_position'] = encode_position
     learn = music_transformer.music_model_learner(data, config=cfg)
     learn.fit_one_cycle(args.epoch)
     learn.save('example')
-
+    torch.cuda.empty_cache()
     #Note: developing predict step
