@@ -24,12 +24,8 @@ import magenta
 import numpy as np
 import six
 import tensorflow as tf
-from tensorflow.contrib import cudnn_rnn as contrib_cudnn_rnn
-from tensorflow.contrib import layers as contrib_layers
-from tensorflow.contrib import metrics as contrib_metrics
-from tensorflow.contrib import rnn as contrib_rnn
-from tensorflow.contrib import slim as contrib_slim
-from tensorflow.python.util import nest as tf_nest
+from tensorflow.compat.v1.nn.rnn_cell import MultiRNNCell, LSTMCell
+from tenssorflow.keras.layers import Dense, LSTM
 
 class MTGenerator:
     def __init__(self,hparams,generator_encoder_decoder,sequence_example_file_paths,mode = "train"):
@@ -232,10 +228,18 @@ class VIDiscriminator:
             raise ValueError("The mode parameter must be 'train', 'eval', "
             "or 'generate'. The mode parameter was: %s" % mode)
         #define hidden_unit_sizes
-        self._numm_units = [400,400]
+        self._num_units = [400,400]
 
     def build(self):
         input_size = self._encoder_decoder.input_size #length of input sequence
         num_classes = self._encoder_decoder.num_classes #length of label
         no_event_label = self._encoder_decoder.default_event_label #default label
+
+        """Building Discriminator graph as a sequential list of layers"""
+        #define a model
+        model = tf.keras.Sequential()
+
+
+
+        
 

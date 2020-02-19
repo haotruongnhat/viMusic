@@ -1,3 +1,4 @@
+'''
 def run_training(build_graph_fn, train_dir, num_training_steps=None,
                  summary_frequency=10, save_checkpoint_secs=60,
                  checkpoints_to_keep=10, keep_checkpoint_every_n_hours=1,
@@ -64,3 +65,4 @@ def run_training(build_graph_fn, train_dir, num_training_steps=None,
           master=master,
           is_chief=task == 0)
       tf.logging.info('Training complete.')
+'''

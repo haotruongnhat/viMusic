@@ -119,6 +119,7 @@ def musicxml_to_sequence_proto(musicxml_document):
                     note.numerator = durationratio.numerator
                     note.denominator = durationratio.denominator
 
+
     musicxml_chord_symbols = musicxml_document.get_chord_symbols()
     for musicxml_chord_symbol in musicxml_chord_symbols:
         text_annotation = sequence.text_annotations.add()
