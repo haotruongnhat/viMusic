@@ -3,6 +3,7 @@
 # import re
 import music21
 import numpy as np
+from pdb import set_trace
 # from pathlib import Path
 
 BPB = 4 # beats per bar
@@ -65,7 +66,7 @@ def stream2chordarr(s, note_size=NOTE_SIZE, sample_freq=SAMPLE_FREQ, max_note_du
             if isinstance(elem, music21.chord.Chord):
                 for p in elem.pitches:
                     notes.append(note_data(p, elem))
-                
+        set_trace()        
         # sort notes by offset (1), duration (2) so that hits are not overwritten and longer notes have priority
         notes_sorted = sorted(notes, key=lambda x: (x[1], x[2])) 
         for n in notes_sorted:
@@ -80,6 +81,7 @@ def chordarr2npenc(chordarr, skip_last_rest=True):
     # combine instruments
     result = []
     wait_count = 0
+    # set_trace()
     for idx,timestep in enumerate(chordarr):
         flat_time = timestep2npenc(timestep)
         if len(flat_time) == 0:
@@ -90,6 +92,7 @@ def chordarr2npenc(chordarr, skip_last_rest=True):
             result.extend(flat_time)
             wait_count = 1
     if wait_count > 0 and not skip_last_rest: result.append([VALTSEP, wait_count])
+    set_trace()
     return np.array(result, dtype=int).reshape(-1, 2) # reshaping. Just in case result is empty
 
 # Note: not worrying about overlaps - as notes will still play. just look tied
