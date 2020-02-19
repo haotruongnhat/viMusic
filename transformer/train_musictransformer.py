@@ -31,6 +31,8 @@ if __name__ == '__main__':
     parser.add_argument('--pretrained_path', default=None, help='path to pretrain model')
     parser.add_argument('--mode', default='train', help='choose between train/predict mode, default: train')
     parser.add_argument('--batch_size', default=16, type=int, help='batch_size')
+    parser.add_argument('--config', default='default', type=int, help='config')
+    parser.add_argument('--lr', default = 1e-01, type=float, help='learning rate')
     parser.add_argument('--epoch', default=2, type=int, help='number of epoch for training')
     parser.add_argument('--encode_position', default=True, type=bool)
     args = parser.parse_args()
@@ -49,17 +51,20 @@ if __name__ == '__main__':
     # x, y = data.one_batch()
 
     # Process for training step
-    call_back = ['accuracy', ]
+    callback = ['accuracy']
     batch_size = args.batch_size
     encode_position = args.encode_position
     dl_tfms = [batch_position_tfm] if encode_position else []
     data = music_transformer.load_data(args.input_dir, args.data_savename, bs=batch_size, 
                                         encode_position=encode_position, dl_tfms=dl_tfms)
 
-    cfg = config.musicm_config()
+    cfg = config.default_config()
     cfg['encode_position'] = encode_position
     learn = music_transformer.music_model_learner(data, pretrained_path=args.pretrained_path, config=cfg)
-    learn.fit_one_cycle(args.epoch, callbacks=[SaveModelCallback(learn, every='improvement', monitor=['accuracy', 'valid_loss'], name='best')])
-    learn.save('best1')
-    torch.cuda.empty_cache()
+    # learn.lr_find(start_lr=1e-07, end_lr= 0.1, num_it=100)
+    
+    # learn.fit(lr=1e-01, epochs= args.epoch, callbacks=[SaveModelCallback(learn, every='epoch', monitor='accuracy')])
+    learn.fit_one_cycle(max_lr= 0.5, cyc_len = args.epoch, callbacks=[SaveModelCallback(learn, every='epoch', monitor='accuracy')] )
+    # learn.save('best1')
+    # torch.cuda.empty_cache()
     #Note: developing predict step
