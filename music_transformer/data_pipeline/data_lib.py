@@ -14,12 +14,14 @@ from music_transformer.music import vimusic_pb2
 from magenta.music import note_sequence_io
 from magenta.pipelines import pipeline
 import tensorflow as tf
+import math
 
-from music_transformer.utils.constants import *
-
-from music_transformer.utils import default_config
+from music_transformer.constants import *
 
 import warnings
+
+class NegativeTimeError(Exception):
+    pass
 
 
 def _velocity_bin_size(num_velocity_bins):
@@ -77,6 +79,8 @@ def unify_beat_in_sequence(sequence,bpm):
                 num_denominator = int(math.ceil(2 / num_of_half))
                 loss_inverse = num_denominator % 4
                 add_in_inverse = num_denominator + loss_inverse
+                if add_in_inverse > 1024:
+                    add_in_inverse = 1024
                 note.numerator = 1
                 note.denominator = add_in_inverse
             else:
@@ -89,13 +93,11 @@ def unify_beat_in_sequence(sequence,bpm):
                 else:
                     note.numerator = num_of_half
                     note.denominator = 2
+        elif duration_in_time == 0:
+            note.numerator = 0
+            note.denominator = 1
         else:
-            raise NegativeTimeError("Beats should not be negative")
-    """ For testing only
-    with open("d.txt","w") as ff:
-        for s1,s2 in zip(sequence.notes,unify_sequence.notes):
-            ff.write("{} {} {} {}\n".format(s1.numerator,s2.numerator,s1.denominator,s2.denominator))
-    """
+            raise NegativeTimeError("Duration should not be negative")
     while 0 < len(unify_sequence.tempos):
         del unify_sequence.tempos[0]
     tempo = unify_sequence.tempos.add()

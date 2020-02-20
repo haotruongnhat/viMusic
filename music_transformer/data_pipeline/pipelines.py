@@ -2,7 +2,7 @@ import magenta
 from magenta.music import sequences_lib
 from magenta.music import chord_symbols_lib
 from magenta.music.constants import *
-from music_transformer.utils.constants import *
+from music_transformer.constants import *
 
 from music_transformer.music.protobuf import vimusic_pb2
 from magenta.pipelines import dag_pipeline
@@ -69,7 +69,7 @@ class ViMusicWithLyricsExtractor(pipeline.Pipeline):
                 
             performances.append(performance)
 
-        return performances, stats.values()
+        return performances
 
 class ViSustainPipeline(pipeline.Pipeline):
 
@@ -148,7 +148,7 @@ class UnifyNotesPipeline(pipeline.Pipeline):
     def transform(self,sequence):
         unify_sequence = copy.deepcopy(sequence)
         chord_symbols = [x for x in unify_sequence.text_annotations 
-        if x.annotation_type == CHORD_SYMBOL]
+        if x.annotation_type == CHORD_SYMBOL if x.time <= sequence.total_time]
         if len(chord_symbols) > 0:
             #special case for last chord_symbol
             infer_notes = chord_symbols_lib.chord_symbol_pitches(chord_symbols[-1].text)
@@ -183,7 +183,7 @@ class UnifyNotesPipeline(pipeline.Pipeline):
             else:
                 del unify_sequence.text_annotations[i]
 
-        #Get list of termpos
+        #Get list of tempos
         #Using an implicit bpm of 120.0
         unify_sequence = unify_beat_in_sequence(unify_sequence,DEFAULT_BPM)
         return [unify_sequence]
@@ -253,6 +253,6 @@ class ViMusicEncoderPipeline(pipeline.Pipeline):
 
         self._encoder_decoder = config.encoder_decoder
 
-    def transform(self,vi):
-        
-        return [None]
+    def transform(self,vi_events):
+        encoded = [self._encoder_decoder.encode(vi_events)]
+        return encoded

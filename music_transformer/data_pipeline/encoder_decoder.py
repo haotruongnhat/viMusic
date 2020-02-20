@@ -3,7 +3,7 @@ import math
 from magenta.music import encoder_decoder
 from magenta.music.encoder_decoder import EventSequenceEncoderDecoder
 
-from music_transformer.utils.constants import *
+from music_transformer.constants import *
 import numpy as np
 
 from .data_lib import ViMusicEvent
@@ -69,12 +69,18 @@ class ViMusicOneHotSequenceEncoderDecoder(EventSequenceEncoderDecoder):
         event_value=0))
 
     def events_to_input(self,events,position):
+        """
+        Input will be a list
+        """
         value_list = list('{:0{}b}' \
         .format(self._encode_event(events[position])
         ,self.input_size))
         return [float(x) for x in value_list]
 
     def events_to_label(self,events,position):
+        """
+        label will be an integer
+        """
         return self._encode_event(events[position])
 
     def class_index_to_event(self,class_index):

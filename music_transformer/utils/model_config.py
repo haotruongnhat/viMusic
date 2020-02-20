@@ -6,6 +6,8 @@ from magenta.models.shared import events_rnn_model
 from magenta.music.protobuf.generator_pb2 import GeneratorDetails
 from tensorflow.contrib import training as contrib_training
 import magenta
+
+from music_transformer.data_pipeline import ViMusicOneHotSequenceEncoderDecoder
 #Min note value and max note value to be considered encoded
 #Why not 0 and 128 for improv_rnn
 
@@ -37,14 +39,14 @@ class ViMusicConfig(events_rnn_model.EventSequenceRnnConfig):
 model_detail = GeneratorDetails(
 id='lyrics-based music transformer - gan generator',
 description='Mixing model between music transformer and lstm-gan and train with lyrics-based')
-data_encoder_decoder = None #have not implemented yet
+num_velocity_bins = 32
+data_encoder_decoder = ViMusicOneHotSequenceEncoderDecoder(num_velocity_bins)
 hparams = contrib_training.HParams(
     batch_size = 64,
     dropout_keep_prob = 1.0,
     learning_rate = 0.001)
 min_events = 0
 max_events = 64
-num_velocity_bins = 32
 steps_per_second = 100
 ###################################33
 

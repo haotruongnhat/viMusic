@@ -10,7 +10,7 @@ from .pipelines import UnifyNotesPipeline
 from .pipelines import ViSustainPipeline
 from .pipelines import ViSplitterPipeline
 
-from music_transformer.utils.constants import *
+from music_transformer.constants import *
 
 def get_pipeline(config, eval_ratio):
     """Returns the Pipeline instance for the music transformer"""
