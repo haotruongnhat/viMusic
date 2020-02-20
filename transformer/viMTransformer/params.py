@@ -1,5 +1,4 @@
 import sys
-sys.path.append('.')
 import midi_processor.processor as sequence
 # max_seq = 2048
 max_seq=2048
