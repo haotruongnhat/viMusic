@@ -9,7 +9,7 @@ import random
 import utils
 from progress.bar import Bar
 tf.executing_eagerly()
-
+from pdb import set_trace
 
 class MusicTransformer(keras.Model):
     def __init__(self, embedding_dim=256, vocab_size=388+2, num_layer=6,
@@ -43,7 +43,7 @@ class MusicTransformer(keras.Model):
         decoder, weights = self.Decoder(
             targets, enc_output=encoder, training=training, lookup_mask=lookup_mask, mask=trg_mask
         )
-
+        # set_trace()
         fc = self.fc(decoder)
         if training:
             return fc
@@ -284,12 +284,13 @@ class MusicTransformerDecoder(keras.Model):
             self.load_ckpt_file(loader_path)
 
     def call(self, inputs, training=None, eval=None, lookup_mask=None):
-        decoder, w = self.Decoder(inputs, training=training, mask=lookup_mask)
+        decoder, weights = self.Decoder(inputs, training=training, mask=lookup_mask)
         fc = self.fc(decoder)
+        # set_trace()
         if training:
             return fc
         elif eval:
-            return fc, w
+            return fc, weights
         else:
             return tf.nn.softmax(fc)
 
@@ -511,14 +512,14 @@ if __name__ == '__main__':
     # import utils
     print(tf.executing_eagerly())
 
-    src = tf.constant([utils.fill_with_placeholder([1,2,3,4],max_len=2048)])
-    trg = tf.constant([utils.fill_with_placeholder([1,2,3,4],max_len=2048)])
-    src_mask, trg_mask, lookup_mask = utils.get_masked_with_pad_tensor(2048, src,trg)
+    src = tf.constant([utils.fill_with_placeholder([1,2,3,4],max_len=512)])
+    trg = tf.constant([utils.fill_with_placeholder([1,2,3,4],max_len=512)])
+    src_mask, trg_mask, lookup_mask = utils.get_masked_with_pad_tensor(512, src,trg)
     print(lookup_mask)
     print(src_mask)
-    mt = MusicTransformer(debug=True, embedding_dim=par.embedding_dim, vocab_size=par.vocab_size)
-    mt.save_weights('my_model.h5', save_format='h5')
-    mt.load_weights('my_model.h5')
+    mt = MusicTransformer(debug=True, max_seq=512, embedding_dim=par.embedding_dim, vocab_size=par.vocab_size, loader_path='/home/Projects/viMusic/tony/MT_models_TF/Classical')
+    # mt.save_weights('my_model.h5', save_format='h5')
+    # mt.load_weights('my_model.h5')
     result = mt.generate([27, 186,  43, 213, 115, 131], length=100)
     print(result)
     from deprecated import sequence

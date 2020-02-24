@@ -64,12 +64,13 @@ def transform_midi(midi_file):
     
     return npenc
     
-
+from pdb import set_trace
 def create_databunch(files, data_save_name, path):
     save_file = os.path.join(path, data_save_name)
     if os.path.exists(save_file):
         data = load_data(path, data_save_name)
     else:
+        # set_trace()
         if not os.path.exists(path):
             os.makedirs(path)
         vocab = MusicVocab.create()
@@ -106,10 +107,12 @@ if __name__=='__main__':
     if not os.path.isdir(data_path):
         os.makedirs(data_path)
 
-    midi_files = get_files(midi_path, '.midi', recurse=True)
-    print(len(midi_files))
-    processed = process_all(process_metadata, midi_files, timeout=120)
+    midi_files = get_files(midi_path, ['.mid', '.midi'], recurse=True)
+    # print(len(midi_files))
+    # processed = process_all(process_metadata, midi_files, timeout=120)
     numpy_files = get_files(numpy_path, extensions='.npy', recurse=True)
+    print('Numpy files: {}'.format(len(numpy_files)))
+    print(numpy_files)
     create_databunch(numpy_files, data_save_name=data_save_name, path=data_path)
 
     # batch_size = 16
