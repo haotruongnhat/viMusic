@@ -52,20 +52,29 @@ opt = Adam(learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
 
 
 # define model
-mt = MusicTransformer(
-            embedding_dim=256,
-            vocab_size=par.vocab_size,
-            num_layer=num_layer,
-            max_seq=max_seq,
-            dropout=0.2,
-            debug=False, loader_path=load_path)
-mt.compile(optimizer=opt, loss=callback.transformer_dist_train_loss)
+if multi_gpu: 
+    pass
+    strategy = tf.distribute.MirroredStrategy()
+    with strategy.scope():
+        inputs = tf.keras.layers.Input(shape=(1,))
+        predictions = tf.keras.layers.Dense(1)(inputs)
+        model = tf.keras.models.Model(inputs=inputs, outputs=predictions)
+
+else:
+    mt = MusicTransformer(
+                embedding_dim=256,
+                vocab_size=par.vocab_size,
+                num_layer=num_layer,
+                max_seq=max_seq,
+                dropout=0.2,
+                debug=False, loader_path=load_path)
+    mt.compile(optimizer=opt, loss=callback.transformer_dist_train_loss)
 
 
 # define tensorboard writer
 current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-train_log_dir = os.path.join(args.save_path,'logs/mt_decoder/'+current_time+'/train')
-eval_log_dir = os.path.join(args.save_path,'logs/mt_decoder/'+current_time+'/eval')
+train_log_dir = os.path.join(args.save_path,'logs/mt/'+current_time+'/train')
+eval_log_dir = os.path.join(args.save_path,'logs/mt/'+current_time+'/eval')
 train_summary_writer = tf.summary.create_file_writer(train_log_dir)
 eval_summary_writer = tf.summary.create_file_writer(eval_log_dir)
 

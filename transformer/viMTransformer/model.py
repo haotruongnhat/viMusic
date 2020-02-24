@@ -136,7 +136,7 @@ class MusicTransformer(keras.Model):
         except FileNotFoundError:
             print("[Warning] model will be initialized...")
 
-    def sanity_check(self, x, y, mode='v'):
+    def sanity_check(self, x, y, mode='v', step = 1):
         # mode: v -> vector, d -> dict
         x, inp_tar, out_tar = MusicTransformer.__prepare_train_data(x, y)
 
@@ -148,6 +148,7 @@ class MusicTransformer(keras.Model):
             trg_mask=tar_mask, lookup_mask=look_ahead_mask, training=False)
 
         if mode == 'v':
+            tf.summary.image('vector', tf.expand_dims(predictions, -1), step)
             return predictions
         elif mode == 'd':
             dic = {}
@@ -159,6 +160,7 @@ class MusicTransformer(keras.Model):
                         dic[str(col)] = 1
             return dic
         else:
+            tf.summary.image('tokens', tf.argmax(predictions, -1), step)
             return tf.argmax(predictions, -1)
 
     def get_config(self):
