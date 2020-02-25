@@ -72,13 +72,13 @@ def get_padded_batch(file_list, batch_size, input_size, label_shape=None,
                                            dtype=tf.float32),
       'labels': tf.FixedLenSequenceFeature(shape=label_shape or [],
                                            dtype=tf.int64)}
-
+  
   _, sequence = tf.parse_single_sequence_example(
       serialized_example, sequence_features=sequence_features)
 
   length = tf.shape(sequence['inputs'])[0]
   input_tensors = [sequence['inputs'], sequence['labels'], length]
-
+  
   if shuffle:
     if num_enqueuing_threads < 2:
       raise ValueError(

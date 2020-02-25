@@ -33,7 +33,7 @@ def preprocess_midi_files_under(midi_root, save_dir):
         try:
             data = preprocess_midi(path)
         except KeyboardInterrupt:
-            print(' Abort')
+            print('Abort')
             return
         except EOFError:
             print('EOF Error')

@@ -517,9 +517,10 @@ if __name__ == '__main__':
     print(lookup_mask)
     print(src_mask)
     mt = MusicTransformer(debug=True, embedding_dim=par.embedding_dim, vocab_size=par.vocab_size)
-    mt.save_weights('my_model.h5', save_format='h5')
-    mt.load_weights('my_model.h5')
-    result = mt.generate([27, 186,  43, 213, 115, 131], length=100)
+    # mt.save_weights('my_model.h5', save_format='h5')
+    # mt.load_weights('my_model.h5')
+    mt.train_on_batch(np.random.rand(1,2048), np.random.rand(1,2048) )
+    # result = mt.generate([27, 186,  43, 213, 115, 131], length=100)
     print(result)
     from deprecated import sequence
 
