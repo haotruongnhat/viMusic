@@ -152,10 +152,11 @@ def weights2boards(weights, dir, step): # weights stored weight[layer][w1,w2]
         tf.summary.histogram()
     pass
 
-
+from pdb import set_trace
 def shape_list(x):
   """Shape list"""
   x_shape = tf.shape(x)
+#   set_trace()
   x_get_shape = x.get_shape().as_list()
 
   res = []

@@ -4,7 +4,7 @@ import midi_processor.processor as sequence
 max_seq=2048
 l_r = 0.001
 embedding_dim = 256
-num_attention_layer = 6
+num_attention_layer = 8
 batch_size = 10
 loss_type = 'categorical_crossentropy'
 event_dim = sequence.RANGE_NOTE_ON + sequence.RANGE_NOTE_OFF + sequence.RANGE_TIME_SHIFT + sequence.RANGE_VEL

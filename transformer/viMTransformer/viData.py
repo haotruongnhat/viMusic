@@ -1,11 +1,8 @@
-import sys
-sys.path.append('/home/tony/Vimusic/viMusic/')
 import utils
 import random
 import pickle
-
 from tensorflow.python import keras
-import tensorflow as tf 
+from tensorflow.train import SequenceExample
 import numpy as np
 import params as par
 
@@ -28,7 +25,7 @@ class Data:
     def batch(self, batch_size, length, mode='train'):
 
         batch_files = random.sample(self.file_dict[mode], k=batch_size)
-        set_trace()
+        # set_trace()
         batch_data = [
             self._get_seq(file, length)
             for file in batch_files

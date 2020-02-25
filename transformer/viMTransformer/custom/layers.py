@@ -295,7 +295,7 @@ class EncoderLayer(keras.layers.Layer):
         super(EncoderLayer, self).__init__()
 
         self.d_model = d_model
-        self.rga = RelativeGlobalAttention(h=h, d=d_model, max_seq=max_seq, add_emb=additional)
+        self.rga = RelativeGlobalAttention(h=h, d=d_model, max_seq=max_seq, add_emb=additional) # h: number of head in multi-head attention
 
         self.FFN_pre = keras.layers.Dense(self.d_model // 2, activation=tf.nn.relu)
         self.FFN_suf = keras.layers.Dense(self.d_model)
@@ -366,8 +366,13 @@ class Encoder(keras.layers.Layer):
         '''
             num_layer: Number of Encoder layer.
             d_model: n-dimension of embedding event vector sequence input to Encoder model, 
+<<<<<<< HEAD
                     current n=11.
             input_vocab_size: vocab_size
+=======
+                    current n=10*7+10*4+syllable embedding dim+1.
+                    Number of head of multi-head attention will be d_model //64
+>>>>>>> b515b056c6a77846447518509ece1b5406b8f0d2
 
         '''
         super(Encoder, self).__init__()
