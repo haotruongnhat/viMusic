@@ -46,7 +46,7 @@ def main():
     # print(midi_files)
     # idx = np.random.randint(0,len(midi_files))
 
-    cutoff_beat = 10
+    cutoff_beat = 15
     arr_note_temp = np.arange(0.1,1.5,step=0.1)
     arr_dur_temp = np.arange(0.1,1.5,step=0.1)
     note_temp = 1.8 # Determines amount of variation in note pitches
@@ -70,7 +70,8 @@ def main():
             note_temp = np.random.choice(arr_note_temp)
             dur_temp = np.random.choice(arr_dur_temp)
             f = np.random.choice(midi_files)
-            item = MusicItem.from_file(f, data.vocab)
+            # item = MusicItem.from_file(f, data.vocab)
+            item = MusicItem.from_file('/home/tony/viMusic/transformer/data/midi/examples/A Thousand Miles - Vanessa Carlton - Verse-And-Pre-Chorus.mid', data.vocab)
             seed_item = item.trim_to_beat(cutoff_beat)
             pred, full = learn.predict(seed_item, n_words=n_words, temperatures=(note_temp, dur_temp), min_bars=12, top_k=top_k, top_p=0.8)
             name_to_save = 'MT_gfm_generate_midi_{}_{}'.format(str(datetime.now().time()), i+1)

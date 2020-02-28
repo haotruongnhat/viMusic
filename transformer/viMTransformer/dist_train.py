@@ -12,9 +12,9 @@ tf.executing_eagerly()
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--l_r', default=0.0001, help='학습률')
+parser.add_argument('--l_r', default=0.0001, help=)
 parser.add_argument('--batch_size', default=2, help='batch size')
-parser.add_argument('--pickle_dir', default='music', help='데이터셋 경로')
+parser.add_argument('--pickle_dir', default='music', help=)
 parser.add_argument('--max_seq', default=2048, help='최대 길이')
 parser.add_argument('--epochs', default=100, help='에폭 수')
 parser.add_argument('--load_path', default="result/0722", help='모델 로드 경로')
@@ -57,7 +57,7 @@ with strategy.scope():
             num_layer=6,
             max_seq=max_seq,
             dropout=0.2,
-            debug=False, loader_path=load_path)
+            debug=False, loader_path=load_path, dist=True)
     mt.compile(optimizer=opt, loss=callback.transformer_dist_train_loss)
 
     # Train Start

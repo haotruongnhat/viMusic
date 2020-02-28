@@ -26,7 +26,7 @@ data_save_name= 'npy_data.pkl'
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Do data processing and training Music Transformer from midi files')
     parser.add_argument('--input_dir', default='../data/npy', help='path to folder contain .npy data file')
-    parser.add_argument('--data_savename', default='data_npy.pkl', help='name to save pkl file')
+    parser.add_argument('--data_savename', default='classical_data_save.pkl', help='name to save pkl file')
     parser.add_argument('--model_savepath', default='../data/npy', help='path to save pkl file')
     parser.add_argument('--pretrained_path', default=None, help='path to pretrain model')
     parser.add_argument('--mode', default='train', help='choose between train/predict mode, default: train')
@@ -44,12 +44,6 @@ if __name__ == '__main__':
     # midi_files = fastai.data_block.get_files(midi_path, '.mid', recurse=True)
     processors = [Midi2ItemProcessor()]
     
-    # Process data step
-    # data = MusicDataBunch.from_files(midi_files, data_path, processors=processors, bs=2, bptt=12)
-    # data.save(data_save_name)
-    # data.train_dl.on_epoch_begin()
-    # x, y = data.one_batch()
-
     # Process for training step
     callback = ['accuracy']
     batch_size = args.batch_size
@@ -66,8 +60,5 @@ if __name__ == '__main__':
     learn = music_transformer.music_model_learner(data, pretrained_path=args.pretrained_path, config=cfg)
     # learn.lr_find(start_lr=1e-07, end_lr= 0.1, num_it=100)
     
-    learn.fit(lr=lr, epochs= args.epoch, callbacks=[SaveModelCallback(learn, every='epoch', monitor='accuracy')])
-    # learn.fit_one_cycle(max_lr= 0.5, cyc_len = args.epoch, callbacks=[SaveModelCallback(learn, every='epoch', monitor='accuracy')] )
-    # learn.save('best1')
-    # torch.cuda.empty_cache()
-    #Note: developing predict step
+    # learn.fit(lr=lr, epochs= args.epoch, callbacks=[SaveModelCallback(learn, every='epoch', monitor='accuracy')])
+    learn.fit_one_cycle(max_lr= 0.0001, cyc_len = args.epoch, callbacks=[SaveModelCallback(learn, every='epoch', monitor='accuracy')] )

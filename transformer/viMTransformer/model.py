@@ -20,21 +20,21 @@ class MusicTransformer(keras.Model):
         self.num_layer = num_layer
         self.embedding_dim = embedding_dim
         self.vocab_size = vocab_size
-        self.dist = dist
-
+        
         if loader_path is not None:
             self.load_config_file(loader_path)
+        self.dist = dist
 
         self.Encoder = Encoder(
-            d_model=self.embedding_dim, input_vocab_size=self.vocab_size,
-            num_layers=self.num_layer, rate=dropout, max_len=max_seq)
+                d_model=self.embedding_dim, input_vocab_size=self.vocab_size,
+                num_layers=self.num_layer, rate=dropout, max_len=max_seq)
         self.Decoder = Decoder(
             num_layers=self.num_layer, d_model=self.embedding_dim,
             input_vocab_size=self.vocab_size, rate=dropout, max_len=max_seq)
         self.fc = keras.layers.Dense(self.vocab_size, activation=None, name='output')
-
+        
         self._set_metrics()
-
+        # set_trace()
         if loader_path is not None:
             self.load_ckpt_file(loader_path)
 
@@ -54,8 +54,7 @@ class MusicTransformer(keras.Model):
 
     def train_on_batch(self, x, y=None, sample_weight=None, class_weight=None, reset_metrics=True):
         if self._debug:
-            tf.print('sanity:\n',self.sanity_check(x, y, mode='d'), output_stream=sys.stdout)
-
+            tf.print('sanity:\n', self.sanity_check(x, y, mode='d'), output_stream=sys.stdout)
         x, dec_input, target = self.__prepare_train_data(x, y)
 
         enc_mask, tar_mask, look_ahead_mask = utils.get_masked_with_pad_tensor(self.max_seq, x, dec_input)
@@ -75,6 +74,7 @@ class MusicTransformer(keras.Model):
         else:
             loss = tf.reduce_mean(self.loss_value)
         loss = tf.reduce_mean(loss)
+        # set_trace()
         for metric in self.custom_metrics:
             result_metric.append(metric(target, predictions).numpy())
 
@@ -110,8 +110,10 @@ class MusicTransformer(keras.Model):
                 trg_mask=tar_mask, lookup_mask=look_ahead_mask, training=False, eval=True)
         loss = tf.reduce_mean(self.loss(out_tar, predictions))
         result_metric = []
+        # import pdb; pdb.set_trace()
         for metric in self.custom_metrics:
             result_metric.append(metric(out_tar, tf.nn.softmax(predictions)).numpy())
+        # pdb.set_trace()
         return [loss.numpy()] + result_metric, weights
 
     def save(self, filepath, overwrite=True, include_optimizer=False, save_format=None):
@@ -175,7 +177,7 @@ class MusicTransformer(keras.Model):
 
     def generate(self, prior: list, beam=None, length=2048, tf_board=False):
         prior = tf.constant([prior])
-
+        # import pdb; pdb.set_trace()
         decode_array = [par.token_sos]
         # TODO: add beam search
         if beam is not None:
@@ -319,6 +321,7 @@ class MusicTransformerDecoder(keras.Model):
         else:
             loss = tf.reduce_mean(self.loss_value)
         loss = tf.reduce_mean(loss)
+        # set_trace()
         for metric in self.custom_metrics:
             result_metric.append(metric(y, predictions).numpy())
 

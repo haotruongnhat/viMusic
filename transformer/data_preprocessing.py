@@ -86,7 +86,7 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_dir', default='./data/midi', help='Path to midi files')
     parser.add_argument('--data_path', default='data_npy.pkl', help='name to save pkl file')
-    parser.add_argument('--output_dir', default='../data/npy', help='path to save pkl file')
+    parser.add_argument('--output_dir', default='../data/npy', help='path to save tmpy npy file')
 
     args = parser.parse_args()
 
@@ -109,7 +109,7 @@ if __name__=='__main__':
 
     midi_files = get_files(midi_path, ['.mid', '.midi'], recurse=True)
     # print(len(midi_files))
-    # processed = process_all(process_metadata, midi_files, timeout=120)
+    processed = process_all(process_metadata, midi_files, timeout=120)
     numpy_files = get_files(numpy_path, extensions='.npy', recurse=True)
     print('Numpy files: {}'.format(len(numpy_files)))
     print(numpy_files)
