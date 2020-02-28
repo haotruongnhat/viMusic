@@ -522,10 +522,18 @@ if __name__ == '__main__':
     src_mask, trg_mask, lookup_mask = utils.get_masked_with_pad_tensor(512, src,trg)
     print(lookup_mask)
     print(src_mask)
+<<<<<<< HEAD
+    mt = MusicTransformer(debug=True, embedding_dim=par.embedding_dim, vocab_size=par.vocab_size)
+    # mt.save_weights('my_model.h5', save_format='h5')
+    # mt.load_weights('my_model.h5')
+    mt.train_on_batch(np.random.rand(1,2048), np.random.rand(1,2048) )
+    # result = mt.generate([27, 186,  43, 213, 115, 131], length=100)
+=======
     mt = MusicTransformer(debug=True, max_seq=512, embedding_dim=par.embedding_dim, vocab_size=par.vocab_size, loader_path='/home/Projects/viMusic/tony/MT_models_TF/Classical')
     # mt.save_weights('my_model.h5', save_format='h5')
     # mt.load_weights('my_model.h5')
     result = mt.generate([27, 186,  43, 213, 115, 131], length=100)
+>>>>>>> b515b056c6a77846447518509ece1b5406b8f0d2
     print(result)
     from deprecated import sequence
 

@@ -25,7 +25,7 @@ class Data:
     def batch(self, batch_size, length, mode='train'):
 
         batch_files = random.sample(self.file_dict[mode], k=batch_size)
-
+        # set_trace()
         batch_data = [
             self._get_seq(file, length)
             for file in batch_files
@@ -117,55 +117,143 @@ def add_noise(inputs: np.array, rate:float = 0.01): # input's dim is 2
     return inputs
 
 
+class viData(Data):
+    def __init__(self, dir_path):
+        self.files = list(utils.find_files_by_extensions(dir_path, ['.tfrecord']))
+        # set_trace()
+        self.length_data, self.dataset = self._read_tf_record_files(self.files, input_size=11)
+        set_trace()
+        self.file_dict = {
+            'train': self.dataset[:int(self.length_data * 0.8)],
+            'eval': self.dataset[int(self.length_data * 0.8): int(self.length_data * 0.9)],
+            'test': self.dataset[int(self.length_data * 0.9):],
+        }
+        self._seq_file_name_idx = 0
+        self._seq_idx = 0
+    
+    def __repr__(self):
+        return '<class Data has "'+str(self.length_data)+'" files>'
+    
+    def batch(self, batch_size, length, mode='train'):
+
+        batch_token = []
+        batch_files = random.sample(self.file_dict[mode], k=batch_size)
+        # set_trace()
+        batch_token = [data[1] for data in batch_files]
+        # set_trace()
+        batch_data = [
+            self._get_seq(seq, length)
+            for seq in batch_token
+        ]
+        return np.array(batch_data)
+
+    def _get_seq(self, data, max_length):
+        if max_length is not None:
+            if max_length <= len(data):
+                start = random.randrange(0,len(data) - max_length)
+                data = data[start:start + max_length]
+            else:
+                # data = np.append(data, par.token_eos)
+                # while len(data) < max_length:
+                #     data = np.append(data, par.pad_token)
+                data = None
+        return data
+                
+    def seq2seq_batch(self, batch_size, length, mode='train'):
+        # set_trace()
+        data = self.batch(batch_size, length * 2, mode)
+        x = data[:, :length]
+        y = data[:, length:]
+        return x, y
+
+    def slide_seq2seq_batch(self, batch_size, length, mode='train'):
+        data = self.batch(batch_size, length+1, mode)
+        x = data[:, :-1]
+        y = data[:, 1:]
+        return x, y
+
+    def _read_tf_record_files(self, file_list, input_size=None, label_shape=None,
+                                shuffle=False):
+        file_queue =tf.data.Dataset.from_tensor_slices(file_list)
+        tfrecord_dataset = tf.data.TFRecordDataset(file_queue)
+        
+        def read_tfrecord(serialized_example):
+            sequence_features = {
+                'inputs': tf.io.FixedLenSequenceFeature(shape=[input_size],
+                                                dtype=tf.float32),
+                'labels': tf.io.FixedLenSequenceFeature(shape=[],
+                                                dtype=tf.int64)
+            }
+            # set_trace()
+            _, example = tf.io.parse_single_sequence_example(
+                        serialized_example, sequence_features = sequence_features)
+
+            return example
+        parsed_dataset = tfrecord_dataset.map(read_tfrecord)
+        input_tensors = []
+        for seq in parsed_dataset:
+            length = tf.shape(seq['inputs'])[0]
+            input_tensors.append([seq['inputs'], seq['labels'], length])
+        
+        return len(input_tensors), input_tensors
+
+
 if __name__ == '__main__':
     import pprint
-    def count_dict(max_length, data):
-        cnt_arr = [0] * max_length
-        cnt_dict = {}
-        # print(cnt_arr)
-        for batch in data:
-            for index in batch:
-                try:
-                    cnt_arr[int(index)] += 1
+    # tf.executing_eagerly()
+    from tensorflow.python.framework.ops import disable_eager_execution
+    import tensorflow.compat.v1 as tf1
+    from pdb import set_trace
+    # import magenta_v2
+    # disable_eager_execution()
+    file_path = '/home/tony/Vimusic/test_data'
+    # filenames = ['/home/tony/Vimusic/retrain_data/performance/training_performances.tfrecord']
+    # file_queue =tf.data.Dataset.from_tensor_slices(filenames)
+    # tfrecord_dataset = tf.data.TFRecordDataset(file_path)
+    dataset = viData(file_path)
+    batch_x, batch_y = dataset.seq2seq_batch(2, 128)
+    # fname = '/home/tony/Vimusic/test_data/MIDI-Unprocessed_01_R1_2009_01-04_ORIG_MID--AUDIO_01_R1_2009_01_R1_2009_02_WAV.midi.pickle'
+    # with open(fname, 'rb') as f:
+    #     data = pickle.load(f)
 
-                except:
-                    print(index)
-                try:
-                    cnt_dict['index-'+str(index)] += 1
-                except KeyError:
-                    cnt_dict['index-'+str(index)] = 1
-        return cnt_arr
+    # print(data)
+    # batch = dataset.batch(2, 10)
+    # print(batch)
+    # def read_tfrecord(serialized_example):
+    #     sequence_features = {
+    #         'inputs': tf.io.FixedLenSequenceFeature(shape=[11],
+    #                                         dtype=tf.float32),
+    #         'labels': tf.io.FixedLenSequenceFeature(shape=[],
+    #                                         dtype=tf.int64)
+    #     }
+    #     # set_trace()
+    #     _, example = tf.io.parse_single_sequence_example(
+    #                 serialized_example, sequence_features = sequence_features)
+        
+    
+    #     return example
+    
+    # parsed_dataset = tfrecord_dataset.map(read_tfrecord)
+    # print(type(parsed_dataset))
+    # test = parsed_dataset.batch(3)
+    # print(list(test.as_numpy_iterator()))
+    # # set_trace()
+    # parsed_dataset = parsed_dataset.batch(2)
+    # parsed_dataset = parsed_dataset.as_numpy_iterator()
+    # input_tensors = []
+    # for sequence in parsed_dataset:
+    #     length = tf.shape(sequence['inputs'])[0]
+    #     input_tensors.append([sequence['inputs'], sequence['labels'], length])
+    # dataset = tf.data.Dataset.from_tensors(input_tensors)
+    # tf.data.Dataset(input_tensors)
+    # dataset = tf.data.Dataset.range(8)
+    # dataset = dataset.batch(3) 
+    # print(list(dataset.as_numpy_iterator()))
+    # print(parsed_dataset['inputs'])
+    # for seq in parsed_dataset.take(1):
+    #     print(seq[1])
+    # np_data = list(parsed_dataset.as_numpy_iterator())
+    # print(type(np_data[0][1]['inputs']))
 
-    # print(add_noise(np.array([[1,2,3,3,4,5,6]]), rate=0.2))
-
-
-    # print(par.vocab_size)
-    # data = Data('dataset/processed')
-    # # ds = DataSequence('dataset/processed', 10, 2048)
-    # sample = data.seq2seq_batch(1000, 100)[0]
-    # pprint.pprint(list(sample))
-    # arr = count_dict(par.vocab_size+3,sample)
-    # pprint.pprint(
-    #     arr)
-    #
-    # from sequence import EventSeq, Event
-    #
-    # event_cnt = {
-    #     'note_on': 0,
-    #     'note_off': 0,
-    #     'velocity': 0,
-    #     'time_shift': 0
-    # }
-    # for event_index in range(len(arr)):
-    #     for event_type, feat_range in EventSeq.feat_ranges().items():
-    #
-    #         if feat_range.start <= event_index < feat_range.stop:
-    #             print(event_type+':'+str(arr[event_index])+' event cnt: '+str(event_cnt))
-    #             event_cnt[event_type] += arr[event_index]
-    #
-    # print(event_cnt)
-
-    # print(np.max(sample), np.min(sample))
-    # print([data._get_seq(file).shape for file in data.files])
-    #while True:
-    # print(ds.__getitem__(10)[1].argmax(-1))
+    
+   

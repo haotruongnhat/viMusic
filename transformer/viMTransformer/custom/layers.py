@@ -161,6 +161,7 @@ class RelativeGlobalAttention(keras.layers.Layer):
     """
     from Music Transformer ( Huang et al, 2018 )
     [paper link](https://arxiv.org/pdf/1809.04281.pdf)
+    h: number of head in multi_head
     """
     def __init__(self, h=4, d=256, add_emb=False, max_seq=2048, **kwargs):
         super().__init__(**kwargs)
@@ -365,8 +366,13 @@ class Encoder(keras.layers.Layer):
         '''
             num_layer: Number of Encoder layer.
             d_model: n-dimension of embedding event vector sequence input to Encoder model, 
+<<<<<<< HEAD
+                    current n=11.
+            input_vocab_size: vocab_size
+=======
                     current n=10*7+10*4+syllable embedding dim+1.
                     Number of head of multi-head attention will be d_model //64
+>>>>>>> b515b056c6a77846447518509ece1b5406b8f0d2
 
         '''
         super(Encoder, self).__init__()
@@ -375,6 +381,7 @@ class Encoder(keras.layers.Layer):
         self.num_layers = num_layers
 
         self.embedding = keras.layers.Embedding(input_vocab_size, d_model)
+        # import pdb; pdb.set_trace()
         # if max_len is not None:
         #     self.pos_encoding = PositionEmbedding(max_seq=max_len, embedding_dim=self.d_model)
         if True:
@@ -383,11 +390,12 @@ class Encoder(keras.layers.Layer):
         self.enc_layers = [EncoderLayer(d_model, rate, h=self.d_model // 64, additional=False, max_seq=max_len)
                            for i in range(num_layers)]
         self.dropout = keras.layers.Dropout(rate)
-
+    
     def call(self, x, mask=None, training=False):
         weights = []
         # adding embedding and position encoding.
         x = self.embedding(x)  # (batch_size, input_seq_len, d_model)
+        import pdb; pdb.set_trace()
         x *= tf.math.sqrt(tf.cast(self.d_model, tf.float32))
         x = self.pos_encoding(x)
         x = self.dropout(x, training=training)
