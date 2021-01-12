@@ -1,0 +1,94 @@
+{
+    "leads": [
+        {
+            "instrument": {
+                "category": "Acapella",
+                "name": "Doo"
+            },
+            "octave_shift": 0,
+            "velocity_offset": 0.7
+        }
+    ],
+    "harmonics": [
+        {
+            "instrument": {
+                "category": "Acapella",
+                "name": "Bom"
+            },
+            "pattern": [{
+                "category": "Acoustic Guitar",
+                "name": "Acoustic FS Travis"
+            },
+            {
+                "category": "Acoustic Guitar",
+                "name": "Acoustic FS arpeggio"
+            },
+            {
+                "category": "Acoustic Guitar",
+                "name": "Acoustic FS Basic"
+            }],
+            "octave_shift": 0,
+            "velocity_offset":  0.3
+        },
+        {
+            "instrument": {
+                "category": "Acapella",
+                "name": "Hmm 1"
+            },
+            "pattern": [{
+                "category": "Rhythm Keys",
+                "name": "Piano 14s"
+            }],
+            "octave_shift": 0,
+            "velocity_offset":  0.3
+        },
+        {
+            "instrument": {
+                "category": "Acapella",
+                "name": "Rih"
+            },
+            "pattern": [{
+                "category": "Orchestral",
+                "name": "Power Strings"
+            }],
+            "octave_shift": 0,
+            "velocity_offset":  0.3
+        }
+    ],
+    "basses": [
+        {
+            "instrument": {
+                "category": "Acapella",
+                "name": "Dueh"
+            },
+            "pattern": [{
+                "category": "Pop Bass",
+                "name": "Pop Bass"
+            },
+            {
+                "category": "Pop Bass",
+                "name": "Pop Bass Dotted"
+            }],
+            "octave_shift": -1,
+            "velocity_offset":  0.3
+        }
+    ],
+    "drums": [
+        {
+            "instrument": {
+                "category": "Beat Box",
+                "name": "Electronic Perc"
+            },
+            "pattern":[
+            {
+                "category": "Pop Drums",
+                "name": "Pop Simple 1"
+            },
+            {
+                "category": "Pop Drums",
+                "name": "Pop 16th Simple"
+            }],
+            "velocity_offset":  1
+        }
+    ]
+}

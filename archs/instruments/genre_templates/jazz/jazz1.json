@@ -1,0 +1,76 @@
+{
+    "leads": [
+        {
+            "instrument": {
+                "category": "Keys 2",
+                "name": "Acoustic KSP"
+            },
+            "octave_shift": 0,
+            "velocity_offset": 1
+        }
+    ],
+    "harmonics": [
+        {
+            "instrument": {
+                "category": "Keys 2",
+                "name": "Acoustic KSP"
+            },
+            "pattern": {
+                "category": "Rhythm Keys",
+                "name": "Swing Piano"
+            },
+            "octave_shift": 0,
+            "velocity_offset": 1
+        }
+    ],
+    "basses": [
+        {
+            "instrument": {
+                "category": "Bass Guitar",
+                "name": "d8 Elec-Acous Bas"
+            },
+            "pattern": {
+                "category": "Rhythm Bass Git",
+                "name": "Walking Bass"
+            },
+            "octave_shift": -1,
+            "velocity_offset": 1
+        },
+        {
+            "instrument": {
+                "category": "Bass Guitar",
+                "name": "d8 Elec-Acous Bas"
+            },
+            "pattern": {
+                "category": "Pop Bass",
+                "name": "Pop Bass Dotted"
+            },
+            "octave_shift": -1,
+            "velocity_offset": 1
+        }
+    ],
+    "drums": [
+        {
+            "instrument": {
+                "category": "SGM",
+                "name": "JAZZ"
+            },
+            "pattern": {
+                "category": "Jazz",
+                "name": "Jazz Swing Simple 1"
+            },
+            "velocity_offset": 1
+        },
+        {
+            "instrument": {
+                "category": "SGM",
+                "name": "JAZZ"
+            },
+            "pattern": {
+                "category": "Jazz",
+                "name": "Jazz Swing Simple 2"
+            },
+            "velocity_offset": 1
+        }
+    ]
+}

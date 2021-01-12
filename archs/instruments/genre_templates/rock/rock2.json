@@ -1,0 +1,98 @@
+{
+    "leads": [
+        {
+            "instrument": {
+                "category": "Distortion Guitar 2",
+                "name": "Overdrive Guitar"
+            },
+            "octave_shift": 0,
+            "velocity_offset": 0.7
+        }
+
+    ],
+    "harmonics": [
+        {
+            "instrument": {
+                "category": "Distortion Guitar",
+                "name": "Guitar Harmonics"
+            },
+            "pattern": [{
+                "category": "Distortion Guitar",
+                "name": "Metal Guitar Open 18s lt"
+            }],
+            "octave_shift": 0,
+            "velocity_offset":  0.3
+        },
+        {
+            "instrument": {
+                "category": "Keys",
+                "name": "Rock Organ"
+            },
+            "pattern": [{
+                "category": "Keys",
+                "name": "Electric Piano Full Voicing Dry"
+            }],
+            "octave_shift": 0,
+            "velocity_offset":  0.3
+        },
+        {
+            "instrument": {
+                "category": "Orchestral",
+                "name": "Violin"
+            },
+            "pattern": [{
+                "category": "Orchestral",
+                "name": "Power Strings"
+            }],
+            "octave_shift": 0,
+            "velocity_offset":  0.3
+        }
+    ],
+    "basses": [
+        {
+            "instrument": {
+                "category": "Bass Guitar",
+                "name": "Slap Bass"
+            },
+            "pattern": [{
+                "category": "Rock Bass",
+                "name": "Rock Bass 18s"
+            },
+            {
+                "category": "Rock Bass",
+                "name": "Rock Bass"
+            }],
+            "octave_shift": -2,
+            "velocity_offset": 0.3
+        },
+        {
+            "instrument": {
+                "category": "Bass Guitar",
+                "name": "Fingered Bass"
+            },
+            "pattern": [{
+                "category": "Rock Bass",
+                "name": "Rock Bass 14s stp"
+            }],
+            "octave_shift": -2,
+            "velocity_offset": 0.3
+        }
+    ],
+    "drums": [
+        {
+            "instrument": {
+                "category": "SGM",
+                "name": "TR-707"
+            },
+            "pattern": [{
+                "category": "Rock",
+                "name": "Punk"
+            },
+            {
+                "category": "Rock",
+                "name": "Rock Complex"
+            }],
+            "velocity_offset": 1
+        }
+    ]
+}

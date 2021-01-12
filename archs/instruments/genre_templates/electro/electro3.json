@@ -1,0 +1,69 @@
+{
+    "leads": [
+        {
+            "instrument": {
+                "category": "Synth 2",
+                "name": "Chiffer Lead"
+            },
+            "octave_shift": 0,
+            "velocity_offset": 0.7
+        }
+    ],
+    "harmonics": [
+        {
+            "instrument": {
+                "category": "Synth 2",
+                "name": "Brass Section"
+            },
+            "pattern": [{
+                "category": "Orchestral",
+                "name": "Power Strings"
+            }],
+            "octave_shift": 0,
+            "velocity_offset":  0.3
+        },
+        {
+            "instrument": {
+                "category": "Synth 2",
+                "name": "Square Wave"
+            },
+            "pattern": [{
+                "category": "Rhythm Keys",
+                "name": "Club Piano Dry"
+            }],
+            "octave_shift": 0,
+            "velocity_offset":  0.3
+        }
+    ],
+    "basses": [
+        {
+            "instrument": {
+                "category": "Bass Guitar",
+                "name": "Synth Bass 3"
+            },
+            "pattern": [{
+                "category": "Cmpx Rhythm Synth",
+                "name": "Brassobasso Arp-main"
+            },
+            {
+                "category": "Cmpx Rhythm Synth",
+                "name": "Acid Bass arp"
+            }],
+            "octave_shift": -2,
+            "velocity_offset": 0.3
+        }
+    ],
+    "drums": [
+        {
+            "instrument": {
+                "category": "SGM",
+                "name": "ELECTRONIC"
+            },
+            "pattern": [{
+                "category": "Electro",
+                "name": "Electro Kick"
+            }],
+            "velocity_offset": 1
+        }
+    ]
+}

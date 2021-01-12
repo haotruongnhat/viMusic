@@ -1,0 +1,37 @@
+WARNING:tensorflow:
+The TensorFlow contrib module will not be included in TensorFlow 2.0.
+For more information, please see:
+  * https://github.com/tensorflow/community/blob/master/rfcs/20180907-contrib-sunset.md
+  * https://github.com/tensorflow/addons
+  * https://github.com/tensorflow/io (for I/O related ops)
+If you depend on functionality not listed there, please file an issue.
+
+ERROR:root:Missing phoneme - token: s, token_compound_2: so, arpabet: L, word: Also, word_arpabet: ['{AO1', 'L', 'S', 'OW0}']
+ERROR:root:Missing phoneme - token: u, token_compound_2: ue, arpabet: Y, word: Fuels, word_arpabet: ['{F', 'Y', 'UW1', 'AH0', 'L', 'Z}']
+ERROR:root:Missing phoneme - token: f, token_compound_2: fs, arpabet: S}, word: Foodstuffs, word_arpabet: ['{F', 'UW1', 'D', 'S', 'T', 'AH2', 'F', 'S}']
+ERROR:root:Missing phoneme - token: a, token_compound_2: ar, arpabet: ER0, word: Particular, word_arpabet: ['{P', 'ER0', 'T', 'IH1', 'K', 'Y', 'AH0', 'L', 'ER0}']
+ERROR:root:Missing phoneme - token: a, token_compound_2: ar, arpabet: T, word: Particular, word_arpabet: ['{P', 'ER0', 'T', 'IH1', 'K', 'Y', 'AH0', 'L', 'ER0}']
+ERROR:root:Missing phoneme - token: a, token_compound_2: ar, arpabet: IH1, word: Particular, word_arpabet: ['{P', 'ER0', 'T', 'IH1', 'K', 'Y', 'AH0', 'L', 'ER0}']
+ERROR:root:Missing phoneme - token: a, token_compound_2: ar, arpabet: K, word: Particular, word_arpabet: ['{P', 'ER0', 'T', 'IH1', 'K', 'Y', 'AH0', 'L', 'ER0}']
+ERROR:root:Missing phoneme - token: a, token_compound_2: ar, arpabet: Y, word: Particular, word_arpabet: ['{P', 'ER0', 'T', 'IH1', 'K', 'Y', 'AH0', 'L', 'ER0}']
+ERROR:root:Missing phoneme - token: r, token_compound_2: rt, arpabet: L, word: Particular, word_arpabet: ['{P', 'ER0', 'T', 'IH1', 'K', 'Y', 'AH0', 'L', 'ER0}']
+ERROR:root:Missing phoneme - token: r, token_compound_2: rt, arpabet: ER0}, word: Particular, word_arpabet: ['{P', 'ER0', 'T', 'IH1', 'K', 'Y', 'AH0', 'L', 'ER0}']
+ERROR:root:Missing phoneme - token: i, token_compound_2: ic, arpabet: AH0, word: Africa, word_arpabet: ['{AE1', 'F', 'R', 'AH0', 'K', 'AH0}']
+ERROR:root:Missing phoneme - token: i, token_compound_2: ic, arpabet: K, word: Africa, word_arpabet: ['{AE1', 'F', 'R', 'AH0', 'K', 'AH0}']
+ERROR:root:Missing phoneme - token: i, token_compound_2: ic, arpabet: AH0}, word: Africa, word_arpabet: ['{AE1', 'F', 'R', 'AH0', 'K', 'AH0}']
+ERROR:root:Missing phoneme - token: r, token_compound_2: rn, arpabet: ER0, word: Modernist, word_arpabet: ['{M', 'AA1', 'D', 'ER0', 'N', 'AH0', 'S', 'T}']
+ERROR:root:Missing phoneme - token: r, token_compound_2: rn, arpabet: N, word: Modernist, word_arpabet: ['{M', 'AA1', 'D', 'ER0', 'N', 'AH0', 'S', 'T}']
+ERROR:root:Missing phoneme - token: r, token_compound_2: rn, arpabet: AH0, word: Modernist, word_arpabet: ['{M', 'AA1', 'D', 'ER0', 'N', 'AH0', 'S', 'T}']
+ERROR:root:Missing phoneme - token: r, token_compound_2: rn, arpabet: S, word: Modernist, word_arpabet: ['{M', 'AA1', 'D', 'ER0', 'N', 'AH0', 'S', 'T}']
+ERROR:root:Missing phoneme - token: r, token_compound_2: rn, arpabet: T}, word: Modernist, word_arpabet: ['{M', 'AA1', 'D', 'ER0', 'N', 'AH0', 'S', 'T}']
+ERROR:root:Missing phoneme - token: w, token_compound_2: we, arpabet: EY1, word: Soweto, word_arpabet: ['{S', 'OW0', 'EY1', 'T', 'OW0}']
+ERROR:root:Missing phoneme - token: w, token_compound_2: we, arpabet: T, word: Soweto, word_arpabet: ['{S', 'OW0', 'EY1', 'T', 'OW0}']
+ERROR:root:Missing phoneme - token: w, token_compound_2: we, arpabet: OW0}, word: Soweto, word_arpabet: ['{S', 'OW0', 'EY1', 'T', 'OW0}']
+WARNING:tensorflow:
+The TensorFlow contrib module will not be included in TensorFlow 2.0.
+For more information, please see:
+  * https://github.com/tensorflow/community/blob/master/rfcs/20180907-contrib-sunset.md
+  * https://github.com/tensorflow/addons
+  * https://github.com/tensorflow/io (for I/O related ops)
+If you depend on functionality not listed there, please file an issue.
+

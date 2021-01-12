@@ -1,0 +1,7 @@
+md5: e3232a4ff48bb7bbb2ecbeedcb3b1940
+outs:
+- md5: ebfb0cddea94ec0af6432a4708e8347f.dir
+  path: cur_best_pop
+  cache: true
+  metric: false
+  persist: false

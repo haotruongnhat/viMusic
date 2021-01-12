@@ -1,0 +1,7 @@
+md5: 2ccd5ba12f623ecf9c8a3a665a029b9d
+outs:
+- md5: ba69cb04e6d45070e8601258413f6138
+  path: voice.pkl
+  cache: true
+  metric: false
+  persist: false

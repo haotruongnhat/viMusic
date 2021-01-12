@@ -1,0 +1,52 @@
+name: vimusic
+channels:
+- pytorch
+- defaults
+- conda-forge
+- roebel
+- numba
+- rapidsai
+dependencies:
+- pytorch==1.5.0
+- torchvision
+- rq
+- tensorflow-gpu
+- tensorflow-hub
+- jupyter
+- ipyparallel
+- unidecode
+- pymongo
+- sshtunnel
+- pretty_midi
+- beautifulsoup4
+- lxml
+- pytest
+- redis
+- pip
+- python>=3.6
+- pip:
+  - roman
+  - spacy[cuda]
+  - mpipe
+  - numba
+  - FinnSyll
+  - music21
+  - miditoolkit
+  - msaf
+  - pebble
+  - joblib
+  - dvc
+  - lyricwikia
+  - 'dvc[ssh]'
+  - git+git://github.com/quadrismegistus/prosodic.git
+  - scipy==1.2.0
+  - mido
+  - six
+  - pyfluidsynth-nowarnings
+  - sf2utils
+  - librosa
+  - strsim
+  - pytest
+  - pytest-xdist
+  - py3nvml
+  - g2p_en

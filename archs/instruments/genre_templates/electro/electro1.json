@@ -1,0 +1,89 @@
+{
+    "leads": [
+        {
+            "instrument": {
+                "category": "Synth",
+                "name": "Saw Lead"
+            },
+            "octave_shift": 0,
+            "velocity_offset":  0.5
+        }
+    ],
+    "harmonics": [
+        {
+            "instrument": {
+                "category": "Synth",
+                "name": "Synth Brass 3"
+            },
+            "pattern": [{
+                "category": "Synth Pads",
+                "name": "Silk Pad Dry"
+            }],
+            "octave_shift": 0,
+            "velocity_offset":  0.3
+        },
+        {
+            "instrument": {
+                "category": "Synth 2",
+                "name": "Brass Section"
+            },
+            "pattern": [{
+                "category": "Synth Pads",
+                "name": "Bright Pad"
+            }],
+            "octave_shift": 0,
+            "velocity_offset":  0.3
+        },
+        {
+            "instrument": {
+                "category": "Orchestral 2",
+                "name": "Synth Strings 1"
+            },
+            "pattern": [{
+                "category": "Orchestral",
+                "name": "Power Strings"
+            }],
+            "octave_shift": 0,
+            "velocity_offset":  0.3
+        }
+    ],
+    "basses": [
+        {
+            "instrument": {
+                "category": "Bass Guitar",
+                "name": "Synth Bass 3"
+            },
+            "pattern": [{
+                "category": "Cmpx Rhythm Synth",
+                "name": "Brassobasso Arp-main"
+            }],
+            "octave_shift": -2,
+            "velocity_offset":  0.3
+        },
+        {
+            "instrument": {
+                "category": "Bass Guitar 2",
+                "name": "Bass & Lead"
+            },
+            "pattern": [{
+                "category": "Cmpx Rhythm Synth",
+                "name": "Chip Bass"
+            }],
+            "octave_shift": -2,
+            "velocity_offset":  0.3
+        }
+    ],
+    "drums": [
+        {
+            "instrument": {
+                "category": "SGM",
+                "name": "ELECTRONIC"
+            },
+            "pattern": [{
+                "category": "Electro",
+                "name": "Electro Kick"
+            }],
+            "velocity_offset": 1
+        }
+    ]
+}

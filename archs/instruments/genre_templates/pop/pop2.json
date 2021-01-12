@@ -1,0 +1,65 @@
+{
+    "leads": [
+        {
+            "instrument": {
+                "category": "Keys",
+                "name": "Grand Piano"
+            },
+            "octave_shift": 0,
+            "velocity_offset": 1
+        }
+    ],
+    "harmonics": [
+        {
+            "instrument": {
+                "category": "Keys",
+                "name": "Bright Grand Piano"
+            },
+            "pattern": [{
+                "category": "Rhythm Keys",
+                "name": "Alberti Bass Piano"
+            },
+            {
+                "category": "Rhythm Keys",
+                "name": "Club Piano Dry"
+            }],
+            "octave_shift": 0,
+            "velocity_offset":  0.4
+        }
+    ],
+    "basses": [
+        {
+            "instrument": {
+                "category": "Bass Guitar",
+                "name": "d8 Fingered Bass"
+            },
+            "pattern": [{
+                "category": "Rhythm Bass Git",
+                "name": "Walking Bass"
+            },
+            {
+                "category": "Rhythm Bass Git",
+                "name": "Pop Rhythm Bass"
+            }],
+            "octave_shift": -1,
+            "velocity_offset":  0.4
+        }
+    ],
+    "drums": [
+        {
+            "instrument": {
+                "category": "SGM",
+                "name": "STANDARD 1"
+            },
+            "pattern": [{
+                "category": "Jazz",
+                "name": "Jazz Swing Simple 2"
+            },
+            {
+                "category": "Jazz",
+                "name": "Jazz Swing Simple 1"
+            }],
+            "velocity_offset":  0.8
+        }
+    ]
+}

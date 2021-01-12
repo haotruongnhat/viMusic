@@ -1,0 +1,15 @@
+onset-piano/*
+lyrics_analysis/*
+remi/dataset_v2
+remi/dataset_v2_pkl/*.pkl
+remi/datasets
+spotify_mood_model/*
+*.pkl
+remi/checkpoint/*
+!remi/checkpoint/*.dvc
+spotify_mood_model/*
+remi/dataset_v2
+remi/dataset_v2_pkl/*.pkl
+remi/datasets
+*.pkl
+!*.dvc

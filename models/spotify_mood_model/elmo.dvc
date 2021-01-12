@@ -1,0 +1,7 @@
+md5: 89bc36ffb7a4bdcadb24838979f1a658
+outs:
+- md5: e9dc922ca6953229a567bf4a4bfc2478.dir
+  path: elmo
+  cache: true
+  metric: false
+  persist: false

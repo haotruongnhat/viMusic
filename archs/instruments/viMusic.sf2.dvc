@@ -1,0 +1,7 @@
+md5: 74575ce7a0337c4abb6cfff16a4fa215
+outs:
+- md5: 1bf9d154759e3c7d253d81f6ce2d9ff0
+  path: viMusic.sf2
+  cache: true
+  metric: false
+  persist: false

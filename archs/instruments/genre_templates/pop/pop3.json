@@ -1,0 +1,74 @@
+{
+    "leads": [
+        {
+            "instrument": {
+                "category": "Clean Guitar",
+                "name": "Steel String Guit"
+            },
+            "octave_shift": 0,
+            "velocity_offset": 0.6
+        }
+    ],
+    "harmonics": [
+        {
+            "instrument": {
+                "category": "Orchestral",
+                "name": "Strings Tremolo"
+            },
+            "pattern": [{
+                "category": "Orchestral",
+                "name": "Power Strings"
+            }],
+            "octave_shift": 0,
+            "velocity_offset":  0.5
+        },
+        {
+            "instrument": {
+                "category": "Keys 2",
+                "name": "Organ 2"
+            },
+            "pattern": [{
+                "category": "Rhythm Keys",
+                "name": "Alberti Bass Piano"
+            }],
+            "octave_shift": 0,
+            "velocity_offset":  0.5
+        }
+    ],
+    "basses": [
+        {
+            "instrument": {
+                "category": "Bass Guitar",
+                "name": "d8 Fingered Bass"
+            },
+            "pattern": [{
+                "category": "Pop Bass",
+                "name": "Pop Bass Dotted"
+            },
+            {
+                "category": "Rhythm Bass Git",
+                "name": "Bossa Bass"
+            }],
+            "octave_shift": -1,
+            "velocity_offset":  0.5
+        }
+    ],
+    "drums": [
+        {
+            "instrument": {
+                "category": "SGM",
+                "name": "STANDARD 1"
+            },
+            "pattern":[
+            {
+                "category": "Pop Drums",
+                "name": "Pop Simple 1"
+            },
+            {
+                "category": "Pop Drums",
+                "name": "Pop 16th Simple"
+            }],
+            "velocity_offset":  1
+        }
+    ]
+}

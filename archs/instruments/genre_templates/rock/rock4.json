@@ -1,0 +1,103 @@
+{
+    "leads": [
+        {
+            "instrument": {
+                "category": "Distortion Guitar",
+                "name": "Overdrive SGM"
+            },
+            "octave_shift": 0,
+            "velocity_offset": 0.5
+        }
+    ],
+    "harmonics": [
+        {
+            "instrument": {
+                "category": "Distortion Guitar",
+                "name": "Funk Guitar"
+            },
+            "pattern": [{
+                "category": "Distortion Guitar",
+                "name": "Lead Guitar dry Bass"
+            }],
+            "octave_shift": 0,
+            "velocity_offset": 0.3
+        },
+        {
+            "instrument": {
+                "category": "Keys",
+                "name": "Bright Grand Piano"
+            },
+            "pattern": [{
+                "category": "Keys",
+                "name": "Harpsichord Chords Roll"
+            },
+            {
+                "category": "Rhythm Keys",
+                "name": "Pop Rhythm Piano"
+            }],
+            "octave_shift": 0,
+            "velocity_offset":  0.3
+        },
+        {
+            "instrument": {
+                "category": "Orchestral 2",
+                "name": "Synth Strings 1"
+            },
+            "pattern": [{
+                "category": "Orchestral",
+                "name": "Power Strings"
+            }],
+            "octave_shift": 0,
+            "velocity_offset": 0.3
+        }
+    ],
+    
+    "basses": [
+        {
+            "instrument": {
+                "category": "Bass Guitar",
+                "name": "Fretless Bass"
+            },
+            
+            "pattern": [{
+                "category": "Synth Bass",
+                "name": "Grunge Bass"
+            },
+            {
+                "category": "Rock Bass",
+                "name": "Rock Bass 14s stp"
+            }],
+            "octave_shift": -2,
+            "velocity_offset": 0.3
+        },
+        {
+            "instrument": {
+                "category": "Bass Guitar",
+                "name": "d8 Picked Bass"
+            },
+            "pattern": [{
+                "category": "Rock Bass",
+                "name": "Rock Bass"
+            }],
+            "octave_shift": -1,
+            "velocity_offset": 0.3
+        }
+    ],
+    "drums": [
+        {
+            "instrument": {
+                "category": "SGM",
+                "name": "POWER"
+            },
+            "pattern": [{
+                "category": "Rock",
+                "name": "Punk"
+            },
+            {
+                "category": "Rock",
+                "name": "Rock Simple 1"
+            }],
+            "velocity_offset": 1
+        }
+    ]
+}

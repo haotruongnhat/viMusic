@@ -1,0 +1,7 @@
+md5: 750ba75f3b2f1ba86ddf186e0ee74bba
+outs:
+- md5: 17f02744ac849fb530d35273204f2c89
+  path: syll_encode_10.bin
+  cache: true
+  metric: false
+  persist: false

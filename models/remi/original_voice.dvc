@@ -1,0 +1,7 @@
+md5: 7ba7468682a099cb3b1757076436a510
+outs:
+- md5: 406d62bc1ff7b650da105f098aa3ad0d.dir
+  path: original_voice
+  cache: true
+  metric: false
+  persist: false
